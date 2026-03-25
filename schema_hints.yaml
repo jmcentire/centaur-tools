@@ -1,0 +1,41 @@
+version: "1"
+project: centaur-tools
+storage_backends:
+  - type: postgres
+    purpose: "Primary relational data store with pgvector for semantic search"
+    owner: null
+    fields:
+      - name: users.github_id
+        classification: PII
+        annotation: immutable
+      - name: users.email
+        classification: PII
+        annotation: gdpr_erasable
+      - name: tools.problem_statement
+        classification: PUBLIC
+        annotation: null
+        description: "Key field for proximity matching and search"
+      - name: tool_embeddings.embedding
+        classification: PUBLIC
+        annotation: null
+        type: "vector(768)"
+        description: "Gemini text-embedding-004 output for semantic similarity"
+      - name: prior_art_nominations.confirmed_at
+        classification: PUBLIC
+        annotation: immutable
+        description: "Once confirmed, permanent record"
+      - name: fork_links.parent_id
+        classification: PUBLIC
+        annotation: immutable
+        description: "Fork ancestry cannot be modified"
+      - name: fork_links.child_id
+        classification: PUBLIC
+        annotation: immutable
+        description: "Fork ancestry cannot be modified"
+      - name: notifications.read
+        classification: PUBLIC
+        annotation: null
+      - name: moderation_actions.action
+        classification: PUBLIC
+        annotation: append_only
+        description: "Moderation log is append-only for transparency"

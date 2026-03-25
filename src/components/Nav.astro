@@ -1,0 +1,33 @@
+---
+interface Props {
+  active?: string;
+}
+const { active } = Astro.props;
+
+const links = [
+  { href: '/explore', label: 'Explore', key: 'explore' },
+  { href: '/submit', label: 'Submit', key: 'submit' },
+  { href: '/forum', label: 'Forum', key: 'forum' },
+  { href: '/governance', label: 'About', key: 'governance' },
+];
+---
+
+<nav class="max-w-5xl mx-auto px-6 pt-8 pb-6">
+  <div class="flex items-baseline justify-between">
+    <a href="/" class="text-xl font-bold text-primary tracking-tight hover:text-emphasis transition-colors">Centaur</a>
+    <div class="flex items-baseline gap-6">
+      {links.map(link => (
+        <a
+          href={link.href}
+          class={active === link.key
+            ? 'text-sm font-medium text-emphasis'
+            : 'text-sm text-secondary hover:text-primary transition-colors'}
+        >
+          {link.label}
+        </a>
+      ))}
+      <span class="text-rule-strong">|</span>
+      <a href="/dashboard" class="text-sm text-secondary hover:text-primary transition-colors">Account</a>
+    </div>
+  </div>
+</nav>

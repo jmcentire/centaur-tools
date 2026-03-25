@@ -1,0 +1,300 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Nav from '../../../components/Nav.astro';
+import Footer from '../../../components/Footer.astro';
+import StarButton from '../../../components/StarButton';
+import ReplyForm from '../../../components/ReplyForm';
+import ReplyActions from '../../../components/ReplyActions';
+
+const { slug } = Astro.params;
+
+const cookie = Astro.cookies.get('session')?.value;
+const headers: Record<string, string> = {};
+if (cookie) headers['Cookie'] = `session=${cookie}`;
+
+let tool: any = null;
+let currentUser: any = null;
+let fetchError = '';
+
+try {
+  const [toolRes, meRes] = await Promise.all([
+    fetch(new URL(`/api/tools/${slug}`, Astro.url), { headers }),
+    fetch(new URL('/api/auth/me', Astro.url), { headers }),
+  ]);
+  if (toolRes.ok) {
+    tool = await toolRes.json();
+  } else {
+    fetchError = 'Tool not found.';
+  }
+  if (meRes.ok) {
+    currentUser = await meRes.json();
+  }
+} catch {
+  fetchError = 'Could not load tool.';
+}
+
+const LANG_DOT: Record<string, string> = {
+  Python: '#3572a5',
+  Rust: '#dea584',
+  TypeScript: '#3178c6',
+  JavaScript: '#f1e05a',
+  Go: '#00add8',
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+const isOwner = currentUser && tool && currentUser.username === tool.author?.username;
+const neighbors = tool?.neighbors || [];
+const discussion = tool?.discussion || null;
+const replies = discussion?.replies || [];
+const forkChildren = tool?.forks?.children || [];
+const forkParents = tool?.forks?.parents || [];
+const pageTitle = tool ? `${tool.name} — Centaur` : `${slug} — Centaur`;
+const pageDesc = tool ? tool.description : `View details for ${slug} on centaur.tools`;
+---
+
+<BaseLayout title={pageTitle} description={pageDesc}>
+  <Nav active="explore" />
+
+  <main class="pt-8 pb-20 min-h-screen">
+    <div class="max-w-5xl mx-auto px-6 mb-8">
+      <div class="flex items-center gap-2 mb-6">
+        <a href="/explore" class="text-[13px] text-secondary hover:text-primary transition-colors">Explore</a>
+        <span class="text-quiet text-xs">/</span>
+        <span class="text-[13px] text-primary">{slug}</span>
+      </div>
+    </div>
+
+    {fetchError && (
+      <div class="max-w-5xl mx-auto px-6 py-20 text-center">
+        <h2 class="text-xl font-semibold text-primary mb-2">Tool not found</h2>
+        <p class="text-secondary text-sm mb-6">{fetchError}</p>
+        <a href="/explore" class="text-sm text-emphasis hover:opacity-70 transition-opacity">Browse all tools</a>
+      </div>
+    )}
+
+    {!fetchError && tool && (
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Main content */}
+          <div class="lg:col-span-2 space-y-8">
+            {/* Header */}
+            <div>
+              <div class="flex items-center gap-3 mb-4">
+                {tool.prior_art && (
+                  <span class="text-[10px] px-2 py-0.5 rounded border border-rule text-secondary">
+                    Prior Art
+                  </span>
+                )}
+                {forkParents.length > 0 && (
+                  <span class="text-[10px] text-quiet">
+                    related to{' '}
+                    <a
+                      href={`/tools/${forkParents[0].slug}`}
+                      class="text-emphasis hover:opacity-70 transition-opacity"
+                    >
+                      {forkParents[0].name}
+                    </a>
+                  </span>
+                )}
+              </div>
+
+              <h1 class="text-3xl font-bold text-primary tracking-tight mb-2">{tool.name}</h1>
+              <p class="text-secondary text-lg">{tool.description}</p>
+
+              <div class="flex items-center gap-4 mt-4">
+                <a
+                  href={`/profile/${tool.author.username}`}
+                  class="text-secondary text-sm hover:text-primary transition-colors"
+                >
+                  by {tool.author.display_name || tool.author.username}
+                </a>
+                <span class="text-quiet text-xs">&middot;</span>
+                <span class="text-[13px] text-secondary">{formatDate(tool.created_at)}</span>
+              </div>
+            </div>
+
+            {/* Vote + links */}
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2 px-4 py-2.5 rounded-md border border-rule">
+                <StarButton
+                  slug={tool.slug}
+                  count={tool.vote_count}
+                  initialVoted={tool.user_voted || false}
+                  client:visible
+                />
+              </div>
+              {isOwner && (
+                <a
+                  href={`/tools/${tool.slug}/edit`}
+                  class="px-4 py-2.5 rounded-md border border-rule hover:bg-surface text-secondary hover:text-primary text-sm transition-colors"
+                >
+                  Edit
+                </a>
+              )}
+              {tool.repo_url && (
+                <a
+                  href={tool.repo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-2 px-4 py-2.5 rounded-md border border-rule hover:bg-surface text-secondary hover:text-primary text-sm transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                  </svg>
+                  Repository
+                </a>
+              )}
+            </div>
+
+            {/* Problem statement */}
+            <div class="p-6 rounded border border-rule">
+              <span class="text-[13px] text-secondary">Problem Statement</span>
+              <p class="text-primary text-sm mt-3 leading-relaxed whitespace-pre-wrap">
+                {tool.problem_statement}
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div class="flex flex-wrap gap-2">
+              {(tool.tags || []).map((tag: string) => (
+                <a
+                  href={`/explore?tag=${encodeURIComponent(tag)}`}
+                  class="text-[10px] px-2.5 py-1 rounded bg-surface border border-rule text-secondary hover:text-primary hover:border-rule-strong transition-colors"
+                >
+                  {tag}
+                </a>
+              ))}
+            </div>
+
+            {/* License + language metadata */}
+            <div class="flex items-center gap-4 text-[13px] text-secondary">
+              <span>{tool.license || 'MIT'}</span>
+              <span class="text-quiet">&middot;</span>
+              <span>{tool.language}</span>
+            </div>
+
+            {/* Related projects */}
+            {forkChildren.length > 0 && (
+              <div class="p-6 rounded border border-rule">
+                <span class="text-[13px] text-secondary">Related Projects</span>
+                <div class="mt-3 space-y-2">
+                  {forkChildren.map((child: any) => (
+                    <a
+                      href={`/tools/${child.slug}`}
+                      class="block text-sm text-secondary hover:text-emphasis transition-colors"
+                    >
+                      {child.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Discussion / Comments */}
+            <div class="pt-8 border-t border-rule">
+              {discussion ? (
+                <>
+                  <div class="flex items-baseline justify-between mb-6">
+                    <span class="text-[13px] text-secondary">
+                      {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+                    </span>
+                    <a
+                      href={`/forum/thread/${discussion.thread_id}`}
+                      class="text-[13px] text-secondary hover:text-primary transition-colors"
+                    >
+                      View in forum
+                    </a>
+                  </div>
+
+                  <div class="space-y-0 mb-8">
+                    {replies.map((reply: any) => {
+                      const isDeleted = reply.body === '[deleted]';
+                      return (
+                        <div class="py-4 border-b border-rule">
+                          <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                              <a
+                                href={`/profile/${reply.author.username}`}
+                                class="text-sm text-primary hover:text-emphasis transition-colors"
+                              >
+                                {reply.author.username}
+                              </a>
+                              <span class="text-[13px] text-quiet">
+                                {formatDate(reply.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                          <p class:list={[
+                            'text-sm leading-relaxed whitespace-pre-wrap',
+                            isDeleted ? 'text-quiet italic' : 'text-body',
+                          ]}>
+                            {reply.body}
+                          </p>
+                          {!isDeleted && (
+                            <ReplyActions
+                              replyId={reply.id}
+                              body={reply.body}
+                              authorUsername={reply.author.username}
+                              client:visible
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                    {replies.length === 0 && (
+                      <p class="text-quiet text-sm py-4">No replies yet. Start the conversation.</p>
+                    )}
+                  </div>
+
+                  <ReplyForm threadId={discussion.thread_id} client:visible />
+                </>
+              ) : (
+                <p class="text-quiet text-sm py-4">No discussion thread.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar — Proximity Neighbors */}
+          <aside class="space-y-6">
+            <div>
+              <span class="text-[13px] text-secondary">Nearby Tools</span>
+              <p class="text-quiet text-xs mt-1">Tools solving similar problems</p>
+            </div>
+
+            {neighbors.length === 0 ? (
+              <p class="text-quiet text-sm">No neighbors found yet.</p>
+            ) : (
+              <div class="space-y-3">
+                {neighbors.map((n: any) => (
+                  <a
+                    href={`/tools/${n.slug}`}
+                    class="block p-4 rounded border border-rule hover:bg-surface transition-colors"
+                  >
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-sm text-primary">{n.name}</span>
+                      <span class="text-[10px] text-secondary">
+                        {Math.round(n.similarity * 100)}%
+                      </span>
+                    </div>
+                    <p class="text-quiet text-xs line-clamp-2">{n.description}</p>
+                  </a>
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
+      </div>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

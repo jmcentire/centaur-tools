@@ -1,0 +1,92 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import ThreadStarButton from '../../components/ThreadStarButton';
+
+const { category } = Astro.params;
+
+const cookie = Astro.cookies.get('session')?.value;
+const headers: Record<string, string> = {};
+if (cookie) headers['Cookie'] = `session=${cookie}`;
+
+let categoryData: any = null;
+let threads: any[] = [];
+let fetchError = '';
+
+try {
+  const res = await fetch(new URL(`/api/forum/categories/${category}`, Astro.url), { headers });
+  if (res.ok) {
+    const data = await res.json();
+    categoryData = data.category || {};
+    threads = data.threads || [];
+  } else {
+    fetchError = 'Category not found.';
+  }
+} catch {
+  fetchError = 'Could not load category.';
+}
+
+const categoryName = categoryData?.name || category;
+const categoryDesc = categoryData?.description || '';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+---
+
+<BaseLayout title={`${categoryName} — Forum — Centaur`}>
+  <Nav active="forum" />
+
+  <main class="max-w-5xl mx-auto px-6 pt-8 pb-20">
+    <div class="flex items-center gap-2 mb-8 text-[13px]">
+      <a href="/forum" class="text-secondary hover:text-primary transition-colors">Forum</a>
+      <span class="text-quiet">/</span>
+      <span class="text-primary">{categoryName}</span>
+    </div>
+
+    <h1 class="text-3xl font-bold text-primary tracking-tight mb-2">{categoryName}</h1>
+    {categoryDesc && <p class="text-secondary text-sm mb-10">{categoryDesc}</p>}
+
+    {fetchError && <p class="text-secondary py-16 text-center">{fetchError}</p>}
+
+    {!fetchError && threads.length === 0 && <p class="text-secondary py-16 text-center">No threads yet.</p>}
+
+    {!fetchError && threads.length > 0 && (
+      <div>
+        {threads.map((thread) => {
+          const author = thread.author?.username || 'unknown';
+          const date = formatDate(thread.last_activity_at || thread.created_at);
+          return (
+            <div class="flex items-center gap-4 py-5 border-b border-rule hover:bg-surface transition-colors -mx-4 px-4 rounded">
+              <div class="shrink-0">
+                <ThreadStarButton
+                  threadId={thread.id}
+                  count={thread.vote_count || 0}
+                  initialVoted={thread.user_voted || false}
+                  client:visible
+                />
+              </div>
+              <a href={`/forum/thread/${thread.id}`} class="group flex-1 min-w-0">
+                <h3 class="text-base font-semibold text-primary group-hover:text-emphasis transition-colors">
+                  {thread.title}
+                </h3>
+                <div class="flex items-center gap-3 mt-1 text-[13px] text-secondary">
+                  <span>{author}</span>
+                  <span class="text-quiet">&middot;</span>
+                  <span>{date}</span>
+                  <span class="text-quiet">&middot;</span>
+                  <span>{thread.reply_count || 0} replies</span>
+                </div>
+              </a>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

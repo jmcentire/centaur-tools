@@ -1,0 +1,43 @@
+version: "1"
+project: centaur-tools
+classification_tiers:
+  - name: PUBLIC
+    soak_duration_hours: 0
+    human_gate: false
+  - name: PII
+    soak_duration_hours: 0
+    human_gate: false
+  - name: AUTH
+    soak_duration_hours: 0
+    human_gate: false
+
+authority_map:
+  auth:
+    domain: authentication
+    trust_score: 0.9
+  users:
+    domain: user_profiles
+    trust_score: 0.8
+  registry:
+    domain: tool_submissions
+    trust_score: 0.8
+  search:
+    domain: discovery
+    trust_score: 0.7
+  proximity:
+    domain: proximity_matching
+    trust_score: 0.7
+  provenance:
+    domain: attribution_records
+    trust_score: 0.9
+  voting:
+    domain: community_signals
+    trust_score: 0.8
+  forum:
+    domain: community_discussion
+    trust_score: 0.7
+  notifications:
+    domain: notification_delivery
+    trust_score: 0.6
+
+canary_eligible: [search, proximity, forum]

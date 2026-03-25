@@ -1,0 +1,96 @@
+---
+import StarButton from './StarButton';
+
+interface Props {
+  slug: string;
+  name: string;
+  description: string;
+  tags: string[];
+  language: string;
+  authorUsername: string;
+  voteCount: number;
+  userVoted: boolean;
+  createdAt: string;
+  showEdit?: boolean;
+}
+
+const {
+  slug,
+  name,
+  description,
+  tags,
+  language,
+  authorUsername,
+  voteCount,
+  userVoted,
+  createdAt,
+  showEdit = false,
+} = Astro.props;
+
+const LANG_DOT: Record<string, string> = {
+  Python: '#3572a5',
+  Rust: '#dea584',
+  TypeScript: '#3178c6',
+  JavaScript: '#f1e05a',
+  Go: '#00add8',
+};
+
+function relDate(iso: string) {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d === 0) return 'today';
+  if (d === 1) return '1d ago';
+  if (d < 30) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+const dotColor = LANG_DOT[language] || '#a3a3a3';
+const displayTags = (tags || []).slice(0, 4);
+const extraTags = (tags || []).length > 4 ? tags.length - 4 : 0;
+---
+
+<a
+  href={`/tools/${slug}`}
+  class="group grid grid-cols-[1fr_140px_100px] gap-6 py-5 border-b border-rule hover:bg-surface transition-colors -mx-4 px-4 rounded"
+>
+  <!-- Col 1: content -->
+  <div class="min-w-0">
+    <h3 class="text-xl font-semibold text-primary leading-snug group-hover:text-emphasis transition-colors">
+      {name}
+    </h3>
+    <p class="text-body mt-1 line-clamp-1">{description}</p>
+    <div class="flex items-center gap-2 mt-2">
+      {displayTags.map((tag) => (
+        <span class="font-mono text-[11px] font-medium text-secondary px-1.5 py-0.5 border border-rule rounded">
+          {tag}
+        </span>
+      ))}
+      {extraTags > 0 && <span class="text-[11px] text-quiet">+{extraTags}</span>}
+    </div>
+  </div>
+
+  <!-- Col 2: language + author -->
+  <div class="text-right self-center">
+    {language && (
+      <div class="flex items-center justify-end gap-1.5 mb-0.5">
+        <span class="w-2 h-2 rounded-full" style={`background-color: ${dotColor}`} />
+        <span class="text-[13px] text-secondary">{language}</span>
+      </div>
+    )}
+    <span class="text-[13px] text-secondary">{authorUsername}</span>
+  </div>
+
+  <!-- Col 3: star + date + edit -->
+  <div class="flex flex-col items-end self-center gap-1">
+    <StarButton slug={slug} count={voteCount} initialVoted={userVoted} client:visible />
+    <div class="text-[13px] text-quiet">{relDate(createdAt)}</div>
+    {showEdit && (
+      <a
+        href={`/tools/${slug}/edit`}
+        class="text-[11px] text-secondary hover:text-primary transition-colors"
+        onclick="event.stopPropagation();"
+      >
+        Edit
+      </a>
+    )}
+  </div>
+</a>

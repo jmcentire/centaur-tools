@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+
+let categories: any[] = [];
+let fetchError = '';
+
+try {
+  const res = await fetch(new URL('/api/forum/categories', Astro.url));
+  if (res.ok) {
+    const data = await res.json();
+    categories = data.categories || [];
+  } else {
+    fetchError = 'Could not load categories.';
+  }
+} catch {
+  fetchError = 'Could not load categories.';
+}
+---
+
+<BaseLayout title="Forum — Centaur" description="Community discussions about AI tools and the centaur registry.">
+  <Nav active="forum" />
+
+  <main class="max-w-5xl mx-auto px-6 pt-8 pb-20">
+    <div class="flex items-baseline justify-between mb-10">
+      <h1 class="text-3xl font-bold text-primary tracking-tight">Forum</h1>
+      <a href="/forum/new" class="px-5 py-2.5 bg-emphasis font-medium text-sm rounded-md hover:opacity-90 transition-opacity" style="color: #ffffff;">
+        New Topic
+      </a>
+    </div>
+
+    {fetchError && (
+      <p class="text-secondary py-16 text-center">{fetchError}</p>
+    )}
+
+    {!fetchError && categories.length === 0 && (
+      <p class="text-secondary py-16 text-center">No categories yet.</p>
+    )}
+
+    {!fetchError && categories.length > 0 && (
+      <div>
+        {categories.map((cat) => (
+          <a
+            href={`/forum/${cat.slug}`}
+            class="group block py-5 border-b border-rule hover:bg-surface transition-colors -mx-4 px-4 rounded"
+          >
+            <div class="flex items-baseline justify-between mb-1">
+              <h3 class="text-xl font-semibold text-primary group-hover:text-emphasis transition-colors">
+                {cat.name}
+              </h3>
+              <span class="text-[13px] text-secondary">{cat.thread_count || 0} threads</span>
+            </div>
+            <p class="text-body">{cat.description || ''}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

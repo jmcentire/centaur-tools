@@ -1,58 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0a0a0f;
-  --color-surface: #0e0e16;
-  --color-card: #13131e;
-  --color-card-hover: #191928;
-  --color-border: #1e1e30;
-  --color-border-bright: #2a2a42;
-  --color-foreground: #e8e6e3;
-  --color-muted: #6b6980;
-  --color-dim: #3d3b50;
-
-  --color-centaur: #8b5cf6;
-  --color-centaur-dim: rgba(139, 92, 246, 0.12);
-  --color-centaur-bright: #a78bfa;
-
-  --color-signet: #c9a227;
-  --color-kindex: #3b82f6;
-  --color-governance: #10b981;
-
-  --font-display: 'Instrument Sans', system-ui, sans-serif;
-  --font-mono: 'DM Mono', 'JetBrains Mono', monospace;
-  --font-code: 'JetBrains Mono', monospace;
+  --color-canvas: #fafaf8;
+  --color-surface: #f2f1ed;
+  --color-rule: #e2e0dc;
+  --color-rule-strong: #cccac4;
+  --color-primary: #1a1a1a;
+  --color-body: #404040;
+  --color-secondary: #737373;
+  --color-quiet: #a3a3a3;
+  --color-emphasis: #1c3553;
+  --color-on-emphasis: #ffffff;
+  --color-link: #1c3553;
+  --color-error: #c53030;
+  --color-success: #2f855a;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-display);
-  background: var(--color-background);
-  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  background: var(--color-canvas);
+  color: var(--color-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  font-size: 16px;
 }
 
-.grid-texture {
-  background-image:
-    linear-gradient(rgba(42, 42, 62, 0.4) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(42, 42, 62, 0.4) 1px, transparent 1px);
-  background-size: 60px 60px;
+/* Kill all link underlines globally */
+a, a[class], a[href] {
+  text-decoration-line: none;
+  text-decoration: none;
 }
 
-.centaur-glow {
-  background: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
-}
-
-@keyframes pulse-slow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-.pulse-slow {
-  animation: pulse-slow 3s ease-in-out infinite;
+/* Default link color is inherit — but let utility classes override */
+:where(a) {
+  color: inherit;
 }

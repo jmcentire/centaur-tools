@@ -1,0 +1,82 @@
+version: "1"
+project: centaur-tools
+constraints:
+  - id: C001
+    name: mit_license_only
+    description: All submitted tools must be MIT licensed. No exceptions.
+    severity: must
+    classification: COMPLIANCE
+    rationale: "MIT is the social contract. Everything forkable, stealable, buildable-upon. Cite your parents."
+    affected_components: [registry]
+
+  - id: C002
+    name: no_rankings
+    description: No scores, rankings, featured lists, editor's picks, or any hierarchy mechanism.
+    severity: must
+    classification: null
+    rationale: "The moment you have a leaderboard you have politics. Let proximity and voting surface things without creating winners and losers."
+    affected_components: [voting, search, registry]
+
+  - id: C003
+    name: provenance_first_class
+    description: Fork lineage, prior art records, and proximity links are permanent and visible.
+    severity: must
+    classification: null
+    rationale: "Attribution is the only currency. The record must exist and be unfalsifiable."
+    affected_components: [provenance, proximity, registry]
+
+  - id: C004
+    name: github_auth_only
+    description: Authentication exclusively via GitHub OAuth. No email/password.
+    severity: must
+    classification: AUTH
+    rationale: "Developer-native. Links directly to repos. Everyone already has an account."
+    affected_components: [auth]
+
+  - id: C005
+    name: community_governance
+    description: Moderation by rotating council elected by vote. Founder veto for 2 years only.
+    severity: must
+    classification: null
+    rationale: "No single gatekeeper. The perception of fairness matters as much as actual fairness."
+    affected_components: [voting, forum]
+
+  - id: C006
+    name: usefulness_not_quality
+    description: Voting measures 'did this help you', not 'is this well-built'. No quality gates.
+    severity: must
+    classification: null
+    rationale: "Quality gatekeeping is how you get /plugins. The question is usefulness."
+    affected_components: [voting]
+
+  - id: C007
+    name: prior_art_permanent
+    description: Once a Prior Art flag is confirmed by vote threshold, the record is permanent regardless of tool activity.
+    severity: must
+    classification: null
+    rationale: "The centaur was here first. That fact doesn't expire."
+    affected_components: [provenance, voting]
+
+  - id: C008
+    name: problem_statement_primary
+    description: The problem statement field is the key field for search and proximity matching, not the tool description.
+    severity: must
+    classification: null
+    rationale: "'What problem does it solve' is what surfaces adjacent tools and drives collaboration."
+    affected_components: [registry, search, proximity]
+
+  - id: C009
+    name: mutual_notification
+    description: When proximity links are created, all linked tool authors are notified. Notifications are introductions, not warnings.
+    severity: should
+    classification: null
+    rationale: "Forced proximity without forced citation. Collaboration becomes natural when builders know about each other."
+    affected_components: [proximity, notifications]
+
+  - id: C010
+    name: fork_lineage_automatic
+    description: When a tool declares a fork parent, the link is bidirectional, permanent, and visible in search.
+    severity: must
+    classification: null
+    rationale: "No hiding the ancestry. Both appear in search together with the relationship visible."
+    affected_components: [provenance, registry, search]

@@ -1,0 +1,103 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import ToolRow from '../../components/ToolRow.astro';
+
+const { username } = Astro.params;
+
+const cookie = Astro.cookies.get('session')?.value;
+const headers: Record<string, string> = {};
+if (cookie) headers['Cookie'] = `session=${cookie}`;
+
+let profile: any = null;
+let tools: any[] = [];
+let fetchError = '';
+
+try {
+  const [profileRes, toolsRes] = await Promise.all([
+    fetch(new URL(`/api/users/${username}`, Astro.url), { headers }),
+    fetch(new URL('/api/tools/?per_page=100', Astro.url), { headers }),
+  ]);
+  if (profileRes.ok) {
+    profile = await profileRes.json();
+  } else {
+    fetchError = 'User not found.';
+  }
+  if (toolsRes.ok) {
+    const data = await toolsRes.json();
+    const allTools = data.tools || [];
+    const userSlugs = new Set((profile?.tools || []).map((t: any) => t.slug));
+    tools = allTools.filter((t: any) => userSlugs.has(t.slug));
+  }
+} catch {
+  fetchError = 'Could not load profile.';
+}
+
+const displayName = profile?.display_name || profile?.username || username;
+---
+
+<BaseLayout title={`${displayName} — Centaur`}>
+  <Nav />
+
+  <main class="max-w-5xl mx-auto px-6 pt-8 pb-20">
+    {fetchError && (
+      <div class="py-16 text-center">
+        <p class="text-body mb-3">{fetchError}</p>
+        <a href="/explore" class="text-sm text-emphasis hover:opacity-70 transition-opacity">Browse tools</a>
+      </div>
+    )}
+
+    {!fetchError && profile && (
+      <>
+        <div class="flex items-start gap-6 mb-12">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" class="w-16 h-16 rounded-full shrink-0" />
+          ) : (
+            <div class="w-16 h-16 rounded-full bg-surface flex items-center justify-center shrink-0">
+              <span class="text-xl text-primary font-bold">
+                {(profile.display_name || profile.username)[0].toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div>
+            <h1 class="text-3xl font-bold text-primary tracking-tight">
+              {profile.display_name || profile.username}
+            </h1>
+            <p class="text-secondary text-sm mt-1">@{profile.username}</p>
+            {profile.bio && (
+              <p class="text-body text-sm mt-3 leading-relaxed">{profile.bio}</p>
+            )}
+            <p class="text-[13px] text-quiet mt-3">
+              {tools.length} tool{tools.length !== 1 ? 's' : ''} registered
+            </p>
+          </div>
+        </div>
+
+        {tools.length === 0 ? (
+          <p class="text-secondary py-12 text-center">No tools registered yet.</p>
+        ) : (
+          <div>
+            {tools.map((tool: any) => (
+              <ToolRow
+                slug={tool.slug}
+                name={tool.name}
+                description={tool.description}
+                tags={tool.tags || []}
+                language={tool.language}
+                authorUsername={tool.author?.username || username!}
+                voteCount={tool.vote_count || 0}
+                userVoted={tool.user_voted || false}
+                createdAt={tool.created_at}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

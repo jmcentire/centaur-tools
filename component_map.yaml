@@ -1,0 +1,137 @@
+version: "1"
+project: centaur-tools
+components:
+  - id: auth
+    role: service
+    protocol: http
+    authority: authentication
+    data_access:
+      PUBLIC: read
+      AUTH: read_write
+    dependencies: []
+
+  - id: users
+    role: service
+    protocol: http
+    authority: user_profiles
+    data_access:
+      PUBLIC: read
+      PII: read_write
+    dependencies: [auth]
+
+  - id: registry
+    role: service
+    protocol: http
+    authority: tool_submissions
+    data_access:
+      PUBLIC: read_write
+    dependencies: [auth, users, search, proximity]
+
+  - id: search
+    role: service
+    protocol: http
+    authority: discovery
+    data_access:
+      PUBLIC: read
+    dependencies: []
+
+  - id: proximity
+    role: service
+    protocol: http
+    authority: proximity_matching
+    data_access:
+      PUBLIC: read_write
+    dependencies: [search, notifications]
+
+  - id: provenance
+    role: service
+    protocol: http
+    authority: attribution_records
+    data_access:
+      PUBLIC: read_write
+    dependencies: [registry, notifications]
+
+  - id: voting
+    role: service
+    protocol: http
+    authority: community_signals
+    data_access:
+      PUBLIC: read_write
+    dependencies: [auth, registry, provenance]
+
+  - id: forum
+    role: service
+    protocol: http
+    authority: community_discussion
+    data_access:
+      PUBLIC: read_write
+    dependencies: [auth, users]
+
+  - id: notifications
+    role: library
+    protocol: internal
+    authority: notification_delivery
+    data_access:
+      PUBLIC: read_write
+    dependencies: [auth]
+
+  - id: frontend
+    role: ingress
+    protocol: http
+    authority: user_interaction
+    data_access:
+      PUBLIC: read
+    dependencies: [auth, registry, search, proximity, provenance, voting, forum, notifications]
+
+edges:
+  - from: frontend
+    to: auth
+    tier: internal
+    protocol: http
+    description: "Login/logout, session check"
+  - from: frontend
+    to: registry
+    tier: internal
+    protocol: http
+    description: "Tool CRUD, submission form"
+  - from: frontend
+    to: search
+    tier: internal
+    protocol: http
+    description: "Search queries, browse"
+  - from: frontend
+    to: voting
+    tier: internal
+    protocol: http
+    description: "Cast votes, Prior Art nominations"
+  - from: frontend
+    to: forum
+    tier: internal
+    protocol: http
+    description: "Forum threads, tool comments"
+  - from: frontend
+    to: notifications
+    tier: internal
+    protocol: http
+    description: "Notification list, mark read"
+  - from: registry
+    to: proximity
+    tier: internal
+    description: "Trigger proximity scan on submission"
+  - from: registry
+    to: provenance
+    tier: internal
+    description: "Create fork links on submission"
+  - from: proximity
+    to: notifications
+    tier: internal
+    description: "Notify adjacent tool authors"
+  - from: provenance
+    to: notifications
+    tier: internal
+    description: "Notify on fork, Prior Art confirmation"
+  - from: proximity
+    to: search
+    tier: external
+    protocol: http
+    description: "Gemini API for embeddings"

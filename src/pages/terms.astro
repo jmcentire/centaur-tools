@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Terms of Service — Centaur" description="Terms of use for centaur.tools.">
+  <Nav />
+
+  <main class="max-w-3xl mx-auto px-6 pt-8 pb-20">
+    <h1 class="text-3xl font-bold text-primary tracking-tight mb-6">Terms of Service</h1>
+
+    <p class="text-body leading-relaxed mb-10">Last updated: March 2026</p>
+
+    <div class="space-y-10">
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">What this is</h2>
+        <p class="text-body leading-relaxed">centaur.tools is a community registry for MIT-licensed AI tools. It helps builders discover each other's work, compare approaches, and connect on shared problems.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Your responsibilities</h2>
+        <ul class="list-disc list-inside space-y-2 text-body leading-relaxed">
+          <li>Be honest about what your tools do.</li>
+          <li>Be respectful in the forum and in all interactions.</li>
+          <li>Only register tools you have the rights to register.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">MIT license requirement</h2>
+        <p class="text-body leading-relaxed">All tools registered on centaur.tools must be released under the MIT license. This keeps the ecosystem open and forkable.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Content ownership</h2>
+        <p class="text-body leading-relaxed">You own what you post. By posting content on centaur.tools, you grant us a license to display, store, and distribute it as part of operating the registry. You can delete your account at any time, which anonymizes your content.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">No warranties</h2>
+        <p class="text-body leading-relaxed">centaur.tools is provided as-is, without warranties of any kind. We do our best to keep it running, but we make no guarantees about uptime, data preservation, or fitness for any particular purpose.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Enforcement</h2>
+        <p class="text-body leading-relaxed">We can remove content or deactivate accounts that violate these terms. We'll try to be reasonable about it.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Contact</h2>
+        <p class="text-body leading-relaxed">Questions or concerns? Post in the <a href="/forum" class="text-emphasis hover:opacity-70 transition-opacity">forum</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>

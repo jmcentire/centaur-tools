@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import SubmitForm from '../components/SubmitForm';
+---
+
+<BaseLayout title="Submit a Tool — Centaur" description="Register your AI tool on centaur.tools. MIT license required. The proximity engine will find your neighbors.">
+  <Nav active="submit" />
+
+  <main class="pt-24 sm:pt-28 pb-20 min-h-screen">
+    <div class="max-w-2xl mx-auto px-6 mb-10">
+      <h1 class="text-3xl font-bold text-primary tracking-tight mb-3">
+        Register a tool
+      </h1>
+      <p class="text-secondary text-sm max-w-xl">
+        Add your tool to the centaur registry. Your problem statement will be used to find proximity neighbors — tools solving related problems.
+      </p>
+    </div>
+
+    <SubmitForm client:load />
+  </main>
+
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="About — Centaur" description="What centaur.tools is and how it works.">
+  <Nav active="governance" />
+
+  <main class="max-w-3xl mx-auto px-6 pt-8 pb-20">
+    <h1 class="text-3xl font-bold text-primary tracking-tight mb-6">About</h1>
+
+    <div class="space-y-5 text-body leading-relaxed mb-12">
+      <p>centaur.tools is a community registry for AI tools. Builders register their tools here so others can find them, compare approaches, and connect with people solving similar problems.</p>
+      <p>The name comes from Garry Kasparov's invention of advanced chess — a format where human and machine play together as partners. The best team wasn't the best human or the best machine. It was the best partnership.</p>
+      <p>The registry exists because discovery in the AI tools ecosystem is scattered. centaur.tools is where builders find each other.</p>
+    </div>
+
+    <div class="border-b border-rule mb-12"></div>
+
+    <h2 class="text-xl font-semibold text-primary mb-8">FAQ</h2>
+
+    <div class="space-y-10">
+      <div>
+        <h3 class="text-base font-semibold text-primary mb-2">Why MIT license only?</h3>
+        <p class="text-body leading-relaxed">Everything here is forkable, buildable-upon, and reusable. MIT keeps the ecosystem open. The social contract is simple: cite your parents.</p>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-primary mb-2">What do stars mean?</h3>
+        <p class="text-body leading-relaxed">"I used this and it was useful." Stars are a signal from builders to other builders. They don't create rankings — the default view is chronological.</p>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-primary mb-2">How does proximity work?</h3>
+        <p class="text-body leading-relaxed">When you register a tool, the registry matches your problem statement against existing tools. If someone else is solving a similar problem, you both get introduced. Two builders working on adjacent problems should know about each other.</p>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-primary mb-2">How do I register a tool?</h3>
+        <p class="text-body leading-relaxed">Sign in with GitHub and go to <a href="/submit" class="text-emphasis hover:opacity-70 transition-opacity">Submit</a>. You'll need a name, description, problem statement, and repository URL. The problem statement is the key field — that's what the proximity engine matches on.</p>
+      </div>
+
+      <div>
+        <h3 class="text-base font-semibold text-primary mb-2">Can I edit my tool after registering?</h3>
+        <p class="text-body leading-relaxed">Yes. Go to your tool's page and click Edit. You can update the description, problem statement, tags, and repository URL.</p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>

@@ -5,8 +5,8 @@ interface Props {
 }
 
 const {
-  title = "Centaur — A Registry for Builders Who Got There First",
-  description = "Community-governed registry for AI tools. Provenance tracking, attribution, and proximity discovery. Built by humans who saw something machines couldn't see alone."
+  title = "Centaur — Community Registry for AI Tools",
+  description = "Find what's already been built. See who's working on similar problems. A community registry for AI tools with proximity discovery and provenance tracking."
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -35,7 +35,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <meta name="theme-color" content="#fafaf8" />
 
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
@@ -52,7 +53,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }
     })} />
 
-    <style>
+    <style is:global>
       @import '../styles/global.css';
     </style>
   </head>

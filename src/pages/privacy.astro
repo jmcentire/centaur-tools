@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="Privacy Policy — Centaur" description="How centaur.tools handles your data.">
+  <Nav />
+
+  <main class="max-w-3xl mx-auto px-6 pt-8 pb-20">
+    <h1 class="text-3xl font-bold text-primary tracking-tight mb-6">Privacy Policy</h1>
+
+    <p class="text-body leading-relaxed mb-10">Last updated: March 2026</p>
+
+    <div class="space-y-10">
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">What we collect</h2>
+        <ul class="list-disc list-inside space-y-2 text-body leading-relaxed">
+          <li><strong>GitHub profile info</strong> — username, email, and avatar URL, received when you sign in via GitHub OAuth.</li>
+          <li><strong>Content you post</strong> — tools you register, forum threads and replies, and your display name and bio.</li>
+          <li><strong>Voting activity</strong> — which tools you've starred.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">What we don't collect</h2>
+        <p class="text-body leading-relaxed">We don't use analytics services, tracking cookies, or any third-party data collection. There are no ads. We don't sell or share your data with anyone.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">How we use it</h2>
+        <p class="text-body leading-relaxed">Your data is used to operate the registry: display your profile, show tools you've submitted, and match tools via proximity (semantic similarity of problem statements). That's it.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Third parties</h2>
+        <ul class="list-disc list-inside space-y-2 text-body leading-relaxed">
+          <li><strong>GitHub</strong> — OAuth authentication. Their <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" class="text-emphasis hover:opacity-70 transition-opacity">privacy policy</a> applies to their service.</li>
+          <li><strong>Fly.io</strong> — Application hosting.</li>
+          <li><strong>Google Gemini API</strong> — We send tool problem statements to generate embeddings for proximity matching. No user profile data is sent.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Your rights</h2>
+        <p class="text-body leading-relaxed">You can <strong>download all your data</strong> and <strong>delete your account</strong> from your <a href="/dashboard" class="text-emphasis hover:opacity-70 transition-opacity">Account settings</a>. These are available to all users, regardless of jurisdiction.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Data retention</h2>
+        <p class="text-body leading-relaxed">Content you post (tools, forum replies) is public. If you delete your account, your forum content is anonymized (attributed to "[deleted user]") and your tools are deactivated. Your user record is deleted.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-3">Contact</h2>
+        <p class="text-body leading-relaxed">Questions? Post in the <a href="/forum" class="text-emphasis hover:opacity-70 transition-opacity">forum</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>

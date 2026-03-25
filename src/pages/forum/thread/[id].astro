@@ -1,0 +1,188 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Nav from '../../../components/Nav.astro';
+import Footer from '../../../components/Footer.astro';
+import StarButton from '../../../components/StarButton';
+import ReplyForm from '../../../components/ReplyForm';
+import ReplyActions from '../../../components/ReplyActions';
+
+const { id } = Astro.params;
+
+const cookie = Astro.cookies.get('session')?.value;
+const headers: Record<string, string> = {};
+if (cookie) headers['Cookie'] = `session=${cookie}`;
+
+let thread: any = null;
+let currentUser: any = null;
+let fetchError = '';
+
+let toolDetail: any = null;
+
+try {
+  const [threadRes, meRes] = await Promise.all([
+    fetch(new URL(`/api/forum/threads/${id}`, Astro.url), { headers }),
+    fetch(new URL('/api/auth/me', Astro.url), { headers }),
+  ]);
+  if (threadRes.ok) {
+    thread = await threadRes.json();
+  } else {
+    fetchError = 'Thread not found.';
+  }
+  if (meRes.ok) {
+    currentUser = await meRes.json();
+  }
+  // If thread has a linked tool, fetch full tool detail (includes user_voted)
+  if (thread?.tool?.slug) {
+    const toolRes = await fetch(new URL(`/api/tools/${thread.tool.slug}`, Astro.url), { headers });
+    if (toolRes.ok) {
+      toolDetail = await toolRes.json();
+    }
+  }
+} catch {
+  fetchError = 'Could not load thread.';
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+const pageTitle = thread ? `${thread.title} — Forum — Centaur` : 'Thread — Forum — Centaur';
+---
+
+<BaseLayout title={pageTitle} description="Forum discussion thread on centaur.tools">
+  <Nav active="forum" />
+
+  <main class="max-w-3xl mx-auto px-6 pt-8 pb-20 min-h-screen">
+    {fetchError && (
+      <div class="py-16 text-center">
+        <p class="text-body mb-3">{fetchError}</p>
+        <a href="/forum" class="text-sm text-emphasis hover:opacity-70 transition-opacity">Back to forum</a>
+      </div>
+    )}
+
+    {!fetchError && thread && (
+      <>
+        {/* Breadcrumb */}
+        <div class="flex items-center gap-2 mb-8 text-[13px]">
+          <a href="/forum" class="text-secondary hover:text-primary transition-colors">Forum</a>
+          <span class="text-quiet">/</span>
+          <a href={`/forum/${thread.category.slug}`} class="text-secondary hover:text-primary transition-colors">
+            {thread.category.name}
+          </a>
+        </div>
+
+        {/* Tool card — shown when thread is linked to a registered tool */}
+        {thread.tool && (
+          <div class="p-6 rounded border border-rule mb-8">
+            <div class="flex items-start justify-between mb-1">
+              <a href={`/tools/${thread.tool.slug}`} class="group">
+                <div class="flex items-baseline gap-2">
+                  <h2 class="text-xl font-semibold text-primary group-hover:text-emphasis transition-colors">
+                    {thread.tool.name}
+                  </h2>
+                  {thread.tool.language && (
+                    <span class="text-[13px] text-secondary">{thread.tool.language}</span>
+                  )}
+                </div>
+                <p class="text-body mt-1">{thread.tool.description}</p>
+              </a>
+              <StarButton
+                slug={thread.tool.slug}
+                count={toolDetail?.vote_count ?? thread.tool.vote_count ?? 0}
+                initialVoted={toolDetail?.user_voted ?? false}
+                client:visible
+              />
+            </div>
+            {thread.tool.tags && thread.tool.tags.length > 0 && (
+              <div class="flex items-center gap-2 mt-2">
+                {thread.tool.tags.slice(0, 4).map((tag: string) => (
+                  <span class="font-mono text-[11px] font-medium text-secondary px-1.5 py-0.5 border border-rule rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Thread header */}
+        <h1 class="text-3xl font-bold text-primary tracking-tight mb-3">{thread.title}</h1>
+        <div class="flex items-center gap-3 mb-8">
+          <a
+            href={`/profile/${thread.author.username}`}
+            class="text-secondary text-sm hover:text-primary transition-colors"
+          >
+            {thread.author.display_name || thread.author.username}
+          </a>
+          <span class="text-quiet text-xs">&middot;</span>
+          <span class="text-[13px] text-secondary">{formatDate(thread.created_at)}</span>
+        </div>
+
+        {/* Original post — hidden when a tool card is shown */}
+        {!thread.tool && (
+          <div class="p-6 rounded border border-rule mb-10">
+            <p class="text-body leading-relaxed whitespace-pre-wrap">{thread.body}</p>
+          </div>
+        )}
+
+        {/* Replies */}
+        <p class="text-[13px] text-secondary mb-4">
+          {thread.replies.length} {thread.replies.length === 1 ? 'reply' : 'replies'}
+        </p>
+
+        <div class="space-y-0 mb-10">
+          {thread.replies.map((reply: any) => {
+            const isDeleted = reply.body === '[deleted]';
+            return (
+              <div class="py-4 border-b border-rule">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <a
+                      href={`/profile/${reply.author.username}`}
+                      class="text-sm text-primary hover:text-emphasis transition-colors"
+                    >
+                      {reply.author.username}
+                    </a>
+                    <span class="text-[13px] text-quiet">{formatDate(reply.created_at)}</span>
+                  </div>
+                </div>
+                <p class:list={[
+                  'text-sm leading-relaxed whitespace-pre-wrap',
+                  isDeleted ? 'text-quiet italic' : 'text-body',
+                ]}>
+                  {reply.body}
+                </p>
+                {!isDeleted && (
+                  <ReplyActions
+                    replyId={reply.id}
+                    body={reply.body}
+                    authorUsername={reply.author.username}
+                    client:visible
+                  />
+                )}
+              </div>
+            );
+          })}
+          {thread.replies.length === 0 && (
+            <p class="text-quiet text-sm py-4">No replies yet.</p>
+          )}
+        </div>
+
+        {/* Reply form */}
+        {!thread.is_locked && (
+          <div class="pt-8 border-t border-rule">
+            <ReplyForm threadId={id!} client:visible />
+          </div>
+        )}
+      </>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import SearchTools from '../components/SearchTools';
+import ToolRow from '../components/ToolRow.astro';
+
+const cookie = Astro.cookies.get('session')?.value;
+const headers: Record<string, string> = {};
+if (cookie) headers['Cookie'] = `session=${cookie}`;
+
+const tag = Astro.url.searchParams.get('tag') || '';
+const q = Astro.url.searchParams.get('q') || '';
+const searchQuery = tag || q;
+
+let tools: any[] = [];
+try {
+  const url = searchQuery
+    ? new URL(`/api/search/?q=${encodeURIComponent(searchQuery)}&per_page=100`, Astro.url)
+    : new URL('/api/tools/?per_page=100', Astro.url);
+  const res = await fetch(url, { headers });
+  if (res.ok) {
+    const data = await res.json();
+    tools = data.tools || [];
+  }
+} catch {
+  // Fall through — SearchTools will handle client-side fetch
+}
+---
+
+<BaseLayout title="Explore — Centaur" description="Browse the centaur.tools registry. Search by name, tag, or problem statement.">
+  <Nav active="explore" />
+
+  <main class="max-w-5xl mx-auto px-6 pt-8 pb-20">
+    <h1 class="text-3xl font-bold text-primary tracking-tight mb-2">Explore</h1>
+    <p class="text-body text-[15px] mb-10">Browse tools registered by builders. Search by name, tag, or problem statement.</p>
+
+    <SearchTools client:load />
+
+    {/* Static fallback for crawlers / no-JS */}
+    <noscript>
+      {tools.length > 0 ? (
+        <div>
+          {tools.map((tool: any) => (
+            <ToolRow
+              slug={tool.slug}
+              name={tool.name}
+              description={tool.description}
+              tags={tool.tags || []}
+              language={tool.language}
+              authorUsername={tool.author?.username || ''}
+              voteCount={tool.vote_count || 0}
+              userVoted={tool.user_voted || false}
+              createdAt={tool.created_at}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="text-secondary py-16 text-center">No tools found.</p>
+      )}
+    </noscript>
+  </main>
+
+  <Footer />
+</BaseLayout>

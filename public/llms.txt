@@ -4,7 +4,7 @@
 
 ## What is centaur.tools?
 
-centaur.tools is a registry for AI tools built by humans. Named after Kasparov's "centaur" concept — advanced chess where human and machine play together as partners.
+centaur.tools is a community-governed registry for AI tools. Named after Kasparov's "centaur" concept — advanced chess where human and machine play together as partners. The registry helps builders find what's already been built, discover who's working on similar problems, and preserve the incentives that keep independent builders building.
 
 ## Core Principles
 
