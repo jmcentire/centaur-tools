@@ -1,0 +1,28 @@
+{
+  "name": "centaur-tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "^6.0.8",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1"
+  }
+}

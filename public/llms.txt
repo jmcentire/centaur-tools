@@ -1,0 +1,20 @@
+# centaur.tools
+
+> A community-governed registry for AI tools with provenance tracking and attribution.
+
+## What is centaur.tools?
+
+centaur.tools is a registry for AI tools built by humans. Named after Kasparov's "centaur" concept — advanced chess where human and machine play together as partners.
+
+## Core Principles
+
+- **Provenance**: Every tool carries its lineage. Forks link to parents. Overlapping problem spaces surface automatically.
+- **Community Governance**: No gatekeepers. Usefulness votes from builders. Rotating moderation council.
+- **Prior Art**: When a platform ships a feature an existing tool anticipated, the community flags it. The record is permanent.
+- **MIT Only**: Everything is forkable. The only social contract is: cite your parents.
+
+## Links
+
+- Website: https://centaur.tools
+- Author: Jeremy McEntire (https://perardua.dev)
+- Part of: Exemplar stack (https://exemplar.tools)
