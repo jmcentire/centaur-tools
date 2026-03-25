@@ -81,8 +81,8 @@ class ToolEmbedding(Base):
     __tablename__ = "tool_embeddings"
 
     tool_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tools.id", ondelete="CASCADE"), primary_key=True)
-    embedding = mapped_column(Vector(768), nullable=False)
-    model_version: Mapped[str] = mapped_column(String(100), default="text-embedding-004")
+    embedding = mapped_column(Vector(3072), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(100), default="gemini-embedding-001")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     tool: Mapped["Tool"] = relationship(back_populates="embedding")

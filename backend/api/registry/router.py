@@ -339,11 +339,12 @@ async def submit_tool(
     await db.commit()
     await db.refresh(tool)
 
-    # Trigger proximity scan (async, best-effort)
+    # Trigger proximity scan (best-effort)
     try:
         await scan_proximity(tool, db)
-    except Exception:
-        pass  # Don't fail submission if proximity scan fails
+    except Exception as e:
+        import logging
+        logging.error(f"Proximity scan failed for {tool.slug}: {e}")
 
     return {"slug": tool.slug, "status": "created"}
 
@@ -383,8 +384,9 @@ async def update_tool(
     if body.problem_statement is not None:
         try:
             await scan_proximity(tool, db)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.error(f"Proximity scan failed for {tool.slug}: {e}")
 
     return {"slug": tool.slug, "status": "updated"}
 

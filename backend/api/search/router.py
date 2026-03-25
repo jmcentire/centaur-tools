@@ -18,7 +18,7 @@ async def get_embedding(text_input: str) -> list[float] | None:
 
         client = genai.Client(api_key=settings.gemini_api_key)
         result = client.models.embed_content(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             contents=text_input,
         )
         return result.embeddings[0].values
