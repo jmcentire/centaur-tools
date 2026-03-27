@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from .auth.router import router as auth_router
+from .feed.router import router as feed_router
 from .forum.router import router as forum_router
 from .notifications.router import router as notifications_router
 from .provenance.router import router as provenance_router
@@ -22,6 +23,7 @@ from .auth.router import get_current_user as placeholder_get_current_user
 app.dependency_overrides[placeholder_get_current_user] = real_get_current_user
 
 app.include_router(auth_router)
+app.include_router(feed_router)
 app.include_router(users_router)
 app.include_router(registry_router)
 app.include_router(search_router)

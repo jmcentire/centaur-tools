@@ -1,0 +1,402 @@
+# Capabilities Manifest — centaur.tools
+# Spec: https://perardua.dev/specs/capabilities
+
+manifest:
+  spec: "0.1"
+  updated: "2026-03-26T00:00:00Z"
+  canonical: "https://perardua.dev/specs/capabilities"
+
+domain:
+  name: "Centaur"
+  url: "https://centaur.tools"
+  description: >
+    Community-governed registry for AI tools with provenance tracking and
+    attribution. MIT-licensed tools only. Semantic search via embeddings.
+    Prior art nominations create permanent records when platforms ship features
+    resembling community tools. Named after Kasparov's centaur concept.
+  contact: "jandrewmcentire@gmail.com"
+  tos: "/terms"
+  privacy: "/privacy"
+
+auth:
+  - id: public
+    type: none
+
+  - id: github
+    type: oauth2
+    provider: github
+    authorize_url: /api/auth/login
+    scopes: ["read:user", "user:email"]
+
+read:
+  # ── Tools ───────────────────────────────────────────────
+  - id: tools_list
+    path: /api/tools/
+    description: "Browse registered tools with optional tag filter"
+    auth: public
+    params:
+      - name: tag
+        type: string
+        required: false
+        description: "Filter by tag"
+      - name: page
+        type: integer
+        required: false
+        default: 1
+      - name: per_page
+        type: integer
+        required: false
+        default: 20
+        max: 100
+    response:
+      format: application/json
+    cache:
+      ttl: 300
+      signal: stable
+    pagination:
+      style: offset
+      default_size: 20
+      max_size: 100
+
+  - id: tool_detail
+    path: /api/tools/{slug}
+    description: "Full tool details including proximity neighbors, fork lineage, discussion thread, and vote count"
+    auth: public
+    params:
+      - name: slug
+        type: string
+        required: true
+    response:
+      format: application/json
+    cache:
+      ttl: 300
+      signal: stable
+
+  # ── Search ──────────────────────────────────────────────
+  - id: search
+    path: /api/search/
+    description: "Hybrid keyword + semantic search across all tools"
+    auth: public
+    params:
+      - name: q
+        type: string
+        required: true
+        description: "Search query (natural language or keywords)"
+      - name: mode
+        type: string
+        required: false
+        default: hybrid
+        enum: [keyword, semantic, hybrid]
+      - name: page
+        type: integer
+        required: false
+        default: 1
+      - name: per_page
+        type: integer
+        required: false
+        default: 20
+        max: 100
+    response:
+      format: application/json
+    cache:
+      ttl: 60
+      signal: volatile
+    pagination:
+      style: offset
+      default_size: 20
+      max_size: 100
+
+  # ── Users ───────────────────────────────────────────────
+  - id: user_profile
+    path: /api/users/{username}
+    description: "Public user profile with authored tools"
+    auth: public
+    params:
+      - name: username
+        type: string
+        required: true
+    response:
+      format: application/json
+    cache:
+      ttl: 3600
+      signal: stable
+
+  # ── Forum ───────────────────────────────────────────────
+  - id: forum_categories
+    path: /api/forum/categories
+    description: "Forum categories with thread counts"
+    auth: public
+    response:
+      format: application/json
+    cache:
+      ttl: 3600
+      signal: stable
+
+  - id: forum_category
+    path: /api/forum/categories/{slug}
+    description: "Threads in a forum category"
+    auth: public
+    params:
+      - name: slug
+        type: string
+        required: true
+      - name: page
+        type: integer
+        required: false
+        default: 1
+      - name: per_page
+        type: integer
+        required: false
+        default: 20
+    response:
+      format: application/json
+    cache:
+      ttl: 300
+      signal: stable
+    pagination:
+      style: offset
+      default_size: 20
+      max_size: 100
+
+  - id: forum_thread
+    path: /api/forum/threads/{thread_id}
+    description: "Forum thread with replies and linked tool"
+    auth: public
+    params:
+      - name: thread_id
+        type: integer
+        required: true
+    response:
+      format: application/json
+    cache:
+      ttl: 300
+      signal: stable
+
+  # ── Prior Art ───────────────────────────────────────────
+  - id: prior_art
+    path: /api/prior-art/
+    description: "Confirmed prior art records"
+    auth: public
+    response:
+      format: application/json
+    cache:
+      ttl: 3600
+      signal: stable
+
+  - id: prior_art_pending
+    path: /api/prior-art/pending
+    description: "Pending prior art nominations awaiting community votes"
+    auth: public
+    response:
+      format: application/json
+    cache:
+      ttl: 300
+      signal: volatile
+
+write:
+  # ── Tools ───────────────────────────────────────────────
+  - id: submit_tool
+    path: /api/tools/
+    method: POST
+    description: "Register a new tool. MIT license required. Repo ownership verified via GitHub."
+    auth: github
+    request:
+      format: application/json
+      fields:
+        - name: name
+          type: string
+          required: true
+        - name: description
+          type: string
+          required: true
+        - name: problem_statement
+          type: string
+          required: true
+          description: "What problem this tool solves (primary field for search/proximity)"
+        - name: repo_url
+          type: string
+          required: true
+          format: url
+        - name: license
+          type: string
+          required: true
+          enum: [MIT]
+          description: "Only MIT license accepted"
+        - name: language
+          type: string
+          required: true
+        - name: tags
+          type: array
+          required: false
+          max_items: 20
+        - name: fork_parent_slug
+          type: string
+          required: false
+          description: "Slug of parent tool if this is a fork"
+    response:
+      format: application/json
+    idempotent: false
+    side_effects:
+      - "Creates tool entry with semantic embedding"
+      - "Auto-creates discussion thread in show-and-tell forum"
+      - "Triggers proximity scan against existing tools"
+      - "Notifies parent tool author if fork declared"
+
+  - id: update_tool
+    path: /api/tools/{slug}
+    method: PATCH
+    description: "Update own tool (owner only)"
+    auth: github
+    request:
+      format: application/json
+    response:
+      format: application/json
+    idempotent: true
+    side_effects:
+      - "Re-scans proximity if problem_statement changed"
+
+  - id: deactivate_tool
+    path: /api/tools/{slug}
+    method: DELETE
+    description: "Soft-deactivate own tool (owner only)"
+    auth: github
+    response:
+      format: application/json
+    idempotent: true
+    side_effects:
+      - "Sets tool to inactive (not deleted)"
+
+  # ── Voting ──────────────────────────────────────────────
+  - id: vote_tool
+    path: /api/tools/{slug}/vote
+    method: POST
+    description: "Star a tool as useful"
+    auth: github
+    response:
+      format: application/json
+    idempotent: true
+
+  - id: unvote_tool
+    path: /api/tools/{slug}/vote
+    method: DELETE
+    description: "Remove star from tool"
+    auth: github
+    response:
+      format: application/json
+    idempotent: true
+
+  # ── Forum ───────────────────────────────────────────────
+  - id: create_thread
+    path: /api/forum/threads
+    method: POST
+    description: "Create forum thread"
+    auth: github
+    request:
+      format: application/json
+      fields:
+        - name: title
+          type: string
+          required: true
+        - name: body
+          type: string
+          required: true
+        - name: category_slug
+          type: string
+          required: true
+    response:
+      format: application/json
+    idempotent: false
+
+  - id: reply_to_thread
+    path: /api/forum/threads/{thread_id}/replies
+    method: POST
+    description: "Reply to forum thread"
+    auth: github
+    request:
+      format: application/json
+      fields:
+        - name: body
+          type: string
+          required: true
+    response:
+      format: application/json
+    idempotent: false
+    side_effects:
+      - "Increments reply count"
+      - "Updates thread last activity"
+
+  # ── Prior Art ───────────────────────────────────────────
+  - id: nominate_prior_art
+    path: /api/prior-art/nominate
+    method: POST
+    description: "Nominate a tool as prior art for a platform feature"
+    auth: github
+    request:
+      format: application/json
+      fields:
+        - name: tool_slug
+          type: string
+          required: true
+        - name: platform
+          type: string
+          required: true
+        - name: platform_feature
+          type: string
+          required: true
+        - name: evidence
+          type: string
+          required: true
+    response:
+      format: application/json
+    idempotent: false
+    side_effects:
+      - "Creates nomination"
+      - "Notifies tool author"
+
+  - id: vote_prior_art
+    path: /api/prior-art/{nomination_id}/vote
+    method: POST
+    description: "Vote to confirm prior art nomination. Auto-confirms at threshold (5 votes)."
+    auth: github
+    response:
+      format: application/json
+    idempotent: true
+    side_effects:
+      - "Records vote"
+      - "If threshold reached: confirms nomination permanently, notifies tool author"
+
+  # ── User Data ───────────────────────────────────────────
+  - id: export_data
+    path: /api/users/me/data
+    method: GET
+    description: "GDPR/CCPA data export — all user data as JSON"
+    auth: github
+
+  - id: delete_account
+    path: /api/users/me
+    method: DELETE
+    description: "GDPR/CCPA right to erasure — delete account and anonymize content"
+    auth: github
+    idempotent: true
+    side_effects:
+      - "Anonymizes forum posts"
+      - "Deactivates tools"
+      - "Deletes votes, notifications, and user record"
+
+notify:
+  - id: activity
+    path: /api/feed/atom.xml
+    format: atom
+    description: "New tool submissions and forum posts"
+    auth: public
+    poll_hint: 3600s
+    categories:
+      - tool
+      - forum
+
+health:
+  path: /api/health
+  format: application/json
+
+errors:
+  format: application/json
