@@ -109,7 +109,8 @@ export default function SubmitForm() {
         </p>
         <a
           href={`/tools/${success}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emphasis text-on-emphasis font-medium text-sm rounded-md hover:opacity-90 transition-opacity no-underline"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emphasis font-medium text-sm rounded-md hover:opacity-90 transition-opacity no-underline"
+          style={{ color: '#ffffff' }}
         >
           View your tool
         </a>
