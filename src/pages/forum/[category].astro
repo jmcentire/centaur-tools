@@ -49,9 +49,11 @@ function formatDate(iso: string) {
 
     <div class="flex items-baseline justify-between mb-2">
       <h1 class="text-3xl font-bold text-primary tracking-tight">{categoryName}</h1>
-      <a href={`/forum/new?category=${category}`} class="px-5 py-2.5 bg-emphasis font-medium text-sm rounded-md hover:opacity-90 transition-opacity" style="color: #ffffff;">
-        New Topic
-      </a>
+      {category !== 'show-and-tell' && (
+        <a href={`/forum/new?category=${category}`} class="px-5 py-2.5 bg-emphasis font-medium text-sm rounded-md hover:opacity-90 transition-opacity" style="color: #ffffff;">
+          New Topic
+        </a>
+      )}
     </div>
     {categoryDesc && <p class="text-secondary text-sm mb-10">{categoryDesc}</p>}
 

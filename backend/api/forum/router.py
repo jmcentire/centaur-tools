@@ -193,6 +193,12 @@ async def create_thread(
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
+    if category.slug == "show-and-tell":
+        raise HTTPException(
+            status_code=403,
+            detail="Show & Tell threads are created automatically when a tool is registered.",
+        )
+
     thread = ForumThread(
         category_id=category.id,
         author_id=user.id,

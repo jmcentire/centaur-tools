@@ -14,6 +14,9 @@ try {
   }
 } catch {}
 
+// Show & Tell is auto-created by tool registration — not user-selectable
+categories = categories.filter(c => c.slug !== 'show-and-tell');
+
 const preselectedCat = categories.find(c => c.slug === preselectedCategory);
 const pageTitle = preselectedCat ? `New post in ${preselectedCat.name}` : 'New Topic';
 ---
