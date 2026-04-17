@@ -11,6 +11,24 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 };
 
+// Agent-readiness: explicit content-types for files Astro's static handler
+// doesn't recognize (no extension, or ones it mis-detects as octet-stream).
+const CONTENT_TYPE_OVERRIDES: Record<string, string> = {
+  '/.well-known/api-catalog': 'application/linkset+json',
+  '/.well-known/http-message-signatures-directory': 'application/json',
+  '/.well-known/capabilities.yaml': 'application/yaml',
+  '/llms.txt': 'text/markdown; charset=utf-8',
+  '/llms-full.txt': 'text/markdown; charset=utf-8',
+  '/robots.txt': 'text/plain; charset=utf-8',
+  '/sitemap.xml': 'application/xml; charset=utf-8',
+};
+
+// Link header advertising machine-readable discovery endpoints (RFC 9727, llms.txt).
+const ROOT_LINK_HEADER =
+  '</.well-known/api-catalog>; rel="api-catalog", ' +
+  '</llms.txt>; rel="alternate"; type="text/markdown", ' +
+  '</llms-full.txt>; rel="alternate"; type="text/markdown"';
+
 function addSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
@@ -25,6 +43,23 @@ function addSecurityHeaders(response: Response): Response {
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
+
+  // Agent-readiness: markdown content negotiation on /.
+  // Agents sending Accept: text/markdown get llms-full.txt instead of HTML.
+  if (url.pathname === '/') {
+    const accept = context.request.headers.get('accept') || '';
+    if (/text\/markdown/i.test(accept)) {
+      const res = await context.rewrite('/llms-full.txt');
+      const headers = new Headers(res.headers);
+      headers.set('Content-Type', 'text/markdown; charset=utf-8');
+      headers.set('Link', ROOT_LINK_HEADER);
+      return addSecurityHeaders(new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+      }));
+    }
+  }
 
   if (url.pathname.startsWith('/api/')) {
     const target = `${BACKEND_URL}${url.pathname}${url.search}`;
@@ -60,5 +95,22 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   }
 
   const response = await next();
-  return addSecurityHeaders(response);
+
+  // Apply content-type overrides for agent-readiness files served by Astro's
+  // static handler (which doesn't know about extensionless well-known URIs).
+  const override = CONTENT_TYPE_OVERRIDES[url.pathname];
+  const headers = new Headers(response.headers);
+  if (override) {
+    headers.set('Content-Type', override);
+  }
+  // Link header advertising api-catalog + llms.txt on /.
+  if (url.pathname === '/') {
+    headers.set('Link', ROOT_LINK_HEADER);
+  }
+
+  return addSecurityHeaders(new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  }));
 };
