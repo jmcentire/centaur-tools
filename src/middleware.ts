@@ -12,15 +12,10 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 // Agent-readiness: explicit content-types for files Astro's static handler
-// doesn't recognize (no extension, or ones it mis-detects as octet-stream).
+// mis-detects (extensionless, or exotic types). Most of our agent-readiness
+// files are served by Astro endpoints now — this covers remaining public/ files.
 const CONTENT_TYPE_OVERRIDES: Record<string, string> = {
-  '/.well-known/api-catalog': 'application/linkset+json',
-  '/.well-known/http-message-signatures-directory': 'application/json',
   '/.well-known/capabilities.yaml': 'application/yaml',
-  '/llms.txt': 'text/markdown; charset=utf-8',
-  '/llms-full.txt': 'text/markdown; charset=utf-8',
-  '/robots.txt': 'text/plain; charset=utf-8',
-  '/sitemap.xml': 'application/xml; charset=utf-8',
 };
 
 // Link header advertising machine-readable discovery endpoints (RFC 9727, llms.txt).
@@ -45,19 +40,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
 
   // Agent-readiness: markdown content negotiation on /.
-  // Agents sending Accept: text/markdown get llms-full.txt instead of HTML.
+  // Agents sending Accept: text/markdown get rewritten to /llms-full.txt
+  // (which is now a real Astro endpoint returning text/markdown).
   if (url.pathname === '/') {
     const accept = context.request.headers.get('accept') || '';
     if (/text\/markdown/i.test(accept)) {
-      const res = await context.rewrite('/llms-full.txt');
-      const headers = new Headers(res.headers);
-      headers.set('Content-Type', 'text/markdown; charset=utf-8');
-      headers.set('Link', ROOT_LINK_HEADER);
-      return addSecurityHeaders(new Response(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers,
-      }));
+      return context.rewrite('/llms-full.txt');
     }
   }
 
