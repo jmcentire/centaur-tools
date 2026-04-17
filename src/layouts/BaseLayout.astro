@@ -56,6 +56,27 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <style is:global>
       @import '../styles/global.css';
     </style>
+
+    <script is:inline>
+      // WebMCP (A6): advertise Centaur's public search as a tool to agent-aware browsers.
+      navigator.modelContext?.provideContext({
+        tools: [
+          {
+            name: "search_centaur_tools",
+            description: "Search the Centaur AI tools registry",
+            inputSchema: {
+              type: "object",
+              properties: { query: { type: "string" } },
+              required: ["query"]
+            },
+            execute: async ({ query }) => {
+              const r = await fetch("/api/search?q=" + encodeURIComponent(query));
+              return r.ok ? await r.json() : { error: "search failed" };
+            }
+          }
+        ]
+      });
+    </script>
   </head>
   <body>
     <slot />
