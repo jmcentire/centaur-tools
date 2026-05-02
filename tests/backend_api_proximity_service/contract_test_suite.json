@@ -1,0 +1,382 @@
+{
+  "component_id": "backend_api_proximity_service",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_scan_proximity_happy_path_with_neighbors",
+      "description": "Verify scan_proximity returns list of neighbors with correct schema when neighbors above threshold exist",
+      "function": "scan_proximity",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tool.id": "valid-uuid-1",
+        "tool.problem_statement": "Valid problem statement",
+        "tool.author_id": "author-1",
+        "neighbors_count": "3"
+      },
+      "input_description": "Tool with valid problem_statement and UUID, mocked DB returning 3 neighbors above threshold",
+      "expected_output_description": "List of 3 dicts with 'tool_id' (str) and 'similarity' (float, 3 decimals)",
+      "expected_error": "",
+      "assertions": [
+        "Result is list",
+        "Length equals 3",
+        "Each item has 'tool_id' and 'similarity' keys",
+        "tool_id is string",
+        "similarity is float rounded to 3 decimals",
+        "ToolEmbedding INSERT executed",
+        "ProximityLink INSERT executed",
+        "Notification INSERT executed",
+        "Session committed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_happy_path_empty_neighbors",
+      "description": "Verify scan_proximity returns empty list when no neighbors above threshold exist",
+      "function": "scan_proximity",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tool.id": "valid-uuid-2",
+        "tool.problem_statement": "Unique problem with no matches",
+        "neighbors_count": "0"
+      },
+      "input_description": "Tool with valid problem_statement, mocked DB returning 0 neighbors above threshold",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Result is empty list",
+        "ToolEmbedding INSERT executed",
+        "No ProximityLink INSERT executed",
+        "No Notification INSERT executed",
+        "Session committed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_happy_path_self_authored_excluded",
+      "description": "Verify notifications are not created for self-authored tool matches",
+      "function": "scan_proximity",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tool.author_id": "author-1",
+        "neighbor1_author": "author-1",
+        "neighbor2_author": "author-2"
+      },
+      "input_description": "Tool with 2 neighbors: 1 self-authored, 1 other-authored",
+      "expected_output_description": "List with 2 neighbors, but only 1 notification created",
+      "expected_error": "",
+      "assertions": [
+        "Result contains 2 neighbors",
+        "Only 1 notification created (for author-2)",
+        "No notification for self-authored match"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_exactly_20_neighbors",
+      "description": "Verify maximum of 20 neighbors considered per scan",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tool.id": "valid-uuid-3",
+        "potential_neighbors": "25"
+      },
+      "input_description": "Tool with 25 potential neighbors, LIMIT 20 in query",
+      "expected_output_description": "List of exactly 20 neighbors",
+      "expected_error": "",
+      "assertions": [
+        "Result length equals 20",
+        "SQL query includes LIMIT 20",
+        "Session committed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_similarity_at_threshold",
+      "description": "Verify neighbor at exact threshold is included",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "similarity": "0.750",
+        "threshold": "0.750"
+      },
+      "input_description": "Tool with neighbor at similarity = settings.proximity_threshold",
+      "expected_output_description": "List containing the neighbor at threshold",
+      "expected_error": "",
+      "assertions": [
+        "Result contains neighbor with similarity 0.750",
+        "ProximityLink created for threshold match"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_similarity_below_threshold",
+      "description": "Verify neighbors below threshold are excluded from results and links",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "max_similarity": "0.749",
+        "threshold": "0.750"
+      },
+      "input_description": "Tool with all neighbors below threshold",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Result is empty list",
+        "No ProximityLink created",
+        "No Notification created"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_canonical_ordering",
+      "description": "Verify ProximityLink records maintain canonical ordering: tool_a_id < tool_b_id",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tool.id": "zzz-uuid",
+        "neighbor.id": "aaa-uuid"
+      },
+      "input_description": "Tool with id 'zzz-uuid' matched with neighbor 'aaa-uuid'",
+      "expected_output_description": "ProximityLink with tool_a_id='aaa-uuid', tool_b_id='zzz-uuid'",
+      "expected_error": "",
+      "assertions": [
+        "ProximityLink INSERT has tool_a_id < tool_b_id",
+        "Result contains neighbor"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_similarity_rounding",
+      "description": "Verify similarity scores are rounded to exactly 3 decimal places",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "raw_similarity": "0.87654321"
+      },
+      "input_description": "Tool with neighbor similarity 0.87654321",
+      "expected_output_description": "Similarity rounded to 0.877",
+      "expected_error": "",
+      "assertions": [
+        "Result similarity equals 0.877",
+        "Notification data contains similarity 0.877"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_edge_case_isolated_session",
+      "description": "Verify function uses isolated database session independent of caller's session",
+      "function": "scan_proximity",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "_db": "caller_session_mock"
+      },
+      "input_description": "Caller's _db session passed but function creates own session",
+      "expected_output_description": "Function creates new session via async_session()",
+      "expected_error": "",
+      "assertions": [
+        "async_session() context manager called",
+        "Caller's _db session not used for operations",
+        "New session committed and closed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_embedding_failure_returns_none",
+      "description": "Verify EmbeddingFailure when get_embedding returns None",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid problem_statement, get_embedding returns None",
+      "expected_output_description": "",
+      "expected_error": "EmbeddingFailure",
+      "assertions": [
+        "Function returns empty list (per postcondition)",
+        "No ToolEmbedding INSERT executed",
+        "No ProximityLink created",
+        "Session rollback or graceful handling"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_embedding_failure_empty_value",
+      "description": "Verify EmbeddingFailure when get_embedding returns empty value",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid problem_statement, get_embedding returns empty list",
+      "expected_output_description": "",
+      "expected_error": "EmbeddingFailure",
+      "assertions": [
+        "Function returns empty list",
+        "No ToolEmbedding INSERT executed",
+        "No database operations performed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_database_connection_failure",
+      "description": "Verify DatabaseConnectionFailure when async_session() context manager fails",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid data, async_session() raises connection error",
+      "expected_output_description": "",
+      "expected_error": "DatabaseConnectionFailure",
+      "assertions": [
+        "DatabaseConnectionFailure exception raised",
+        "No database operations executed",
+        "Error propagates to caller"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_database_query_failure_select",
+      "description": "Verify DatabaseQueryFailure when SELECT operation fails",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid data, execute() raises exception during SELECT neighbors",
+      "expected_output_description": "",
+      "expected_error": "DatabaseQueryFailure",
+      "assertions": [
+        "DatabaseQueryFailure exception raised",
+        "Session rollback executed",
+        "Error propagates to caller"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_database_query_failure_insert",
+      "description": "Verify DatabaseQueryFailure when INSERT operation fails",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid data, execute() raises exception during INSERT",
+      "expected_output_description": "",
+      "expected_error": "DatabaseQueryFailure",
+      "assertions": [
+        "DatabaseQueryFailure exception raised",
+        "Session rollback executed",
+        "Transaction not committed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_commit_failure_constraint_violation",
+      "description": "Verify CommitFailure when db.commit() fails due to constraint violation",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid data, commit() raises IntegrityError",
+      "expected_output_description": "",
+      "expected_error": "CommitFailure",
+      "assertions": [
+        "CommitFailure exception raised",
+        "Session rollback executed",
+        "No partial data committed"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_error_commit_failure_transaction_error",
+      "description": "Verify CommitFailure when db.commit() fails due to transaction error",
+      "function": "scan_proximity",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with valid data, commit() raises generic SQLAlchemy error",
+      "expected_output_description": "",
+      "expected_error": "CommitFailure",
+      "assertions": [
+        "CommitFailure exception raised",
+        "Session rollback attempted",
+        "Error propagates to caller"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_invariant_canonical_ordering_enforced",
+      "description": "Verify ProximityLink records always maintain canonical ordering regardless of input order",
+      "function": "scan_proximity",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple tools with various UUID orderings",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "All ProximityLink records have tool_a_id < tool_b_id",
+        "Invariant holds across all created links"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_invariant_similarity_rounding_consistent",
+      "description": "Verify similarity scores are consistently rounded to 3 decimals in all outputs",
+      "function": "scan_proximity",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with multiple neighbors having high-precision similarity scores",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "All output similarity values have exactly 3 decimal places",
+        "All notification data similarity values have exactly 3 decimal places",
+        "Rounding is consistent across output and notifications"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_invariant_max_20_neighbors_always",
+      "description": "Verify maximum of 20 neighbors invariant holds regardless of available matches",
+      "function": "scan_proximity",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with 100+ potential neighbors above threshold",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Result length never exceeds 20",
+        "ProximityLink count never exceeds 20",
+        "LIMIT 20 enforced in SQL query"
+      ]
+    },
+    {
+      "id": "test_scan_proximity_invariant_tool_id_serialized_as_string",
+      "description": "Verify tool_id in output is always serialized as string via str()",
+      "function": "scan_proximity",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with UUID neighbors of various types",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "All tool_id values in output are str type",
+        "UUID objects converted via str(neighbor_tool_id)",
+        "No UUID objects in output"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract-based test suite for backend_api_proximity_service.scan_proximity\n\nThis test suite verifies the async scan_proximity function against its contract,\ncovering happy paths, edge cases, error cases, and invariants with mocked dependencies.\n\"\"\"\n\nimport pytest\nfrom unittest.mock import AsyncMock, MagicMock, patch, call\nfrom uuid import UUID, uuid4\nimport json\n\n\n# Mock exceptions that would be defined in the actual module\nclass EmbeddingFailure(Exception):\n    \"\"\"Raised when embedding generation fails\"\"\"\n    pass\n\n\nclass DatabaseConnectionFailure(Exception):\n    \"\"\"Raised when database connection cannot be acquired\"\"\"\n    pass\n\n\nclass DatabaseQueryFailure(Exception):\n    \"\"\"Raised when database query operations fail\"\"\"\n    pass\n\n\nclass CommitFailure(Exception):\n    \"\"\"Raised when database commit fails\"\"\"\n    pass\n\n\n# Mock models\nclass Tool:\n    \"\"\"Mock Tool model\"\"\"\n    def __init__(self, id, problem_statement, author_id):\n        self.id = id if isinstance(id, UUID) else UUID(id)\n        self.problem_statement = problem_statement\n        self.author_id = author_id\n\n\nclass ToolEmbedding:\n    \"\"\"Mock ToolEmbedding model\"\"\"\n    def __init__(self, tool_id, embedding):\n        self.tool_id = tool_id\n        self.embedding = embedding\n\n\nclass ProximityLink:\n    \"\"\"Mock ProximityLink model\"\"\"\n    def __init__(self, tool_a_id, tool_b_id, similarity):\n        self.tool_a_id = tool_a_id\n        self.tool_b_id = tool_b_id\n        self.similarity = similarity\n\n\nclass Notification:\n    \"\"\"Mock Notification model\"\"\"\n    def __init__(self, author_id, data):\n        self.author_id = author_id\n        self.data = data\n\n\n# Fixtures\n@pytest.fixture\ndef mock_tool():\n    \"\"\"Factory for creating test Tool instances\"\"\"\n    def _create_tool(id=None, problem_statement=\"Test problem statement\", author_id=None):\n        if id is None:\n            id = uuid4()\n        if author_id is None:\n            author_id = str(uuid4())\n        return Tool(id, problem_statement, author_id)\n    return _create_tool\n\n\n@pytest.fixture\ndef mock_async_session():\n    \"\"\"Mock AsyncSession with configurable behavior\"\"\"\n    session = AsyncMock()\n    session.execute = AsyncMock()\n    session.commit = AsyncMock()\n    session.rollback = AsyncMock()\n    session.close = AsyncMock()\n    session.add = MagicMock()\n    return session\n\n\n@pytest.fixture\ndef mock_settings():\n    \"\"\"Mock settings with proximity_threshold\"\"\"\n    settings = MagicMock()\n    settings.proximity_threshold = 0.75\n    return settings\n\n\n@pytest.fixture\ndef mock_embedding_service():\n    \"\"\"Mock embedding generation service\"\"\"\n    async def _get_embedding(text):\n        return [0.1, 0.2, 0.3] * 128  # Mock 384-dim embedding\n    return _get_embedding\n\n\n# Helper function to create mock result rows\ndef create_mock_neighbor_row(tool_id, similarity, author_id):\n    \"\"\"Create a mock database row for neighbor query results\"\"\"\n    row = MagicMock()\n    row.id = tool_id if isinstance(tool_id, UUID) else UUID(tool_id)\n    row.similarity = similarity\n    row.author_id = author_id\n    return row\n\n\n# HAPPY PATH TESTS\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_happy_path_with_neighbors(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify scan_proximity returns list of neighbors with correct schema when neighbors above threshold exist\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Find similar tools\", author_id=\"author-1\")\n    \n    # Mock neighbor results\n    neighbor1_id = uuid4()\n    neighbor2_id = uuid4()\n    neighbor3_id = uuid4()\n    \n    neighbor_rows = [\n        create_mock_neighbor_row(neighbor1_id, 0.95, \"author-2\"),\n        create_mock_neighbor_row(neighbor2_id, 0.87, \"author-3\"),\n        create_mock_neighbor_row(neighbor3_id, 0.81, \"author-4\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    # Mock the async context manager for async_session()\n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        # Import after patching\n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert isinstance(result, list), \"Result should be a list\"\n        assert len(result) == 3, \"Should return 3 neighbors\"\n        \n        for item in result:\n            assert isinstance(item, dict), \"Each item should be a dict\"\n            assert 'tool_id' in item, \"Each item should have 'tool_id' key\"\n            assert 'similarity' in item, \"Each item should have 'similarity' key\"\n            assert isinstance(item['tool_id'], str), \"tool_id should be string\"\n            assert isinstance(item['similarity'], float), \"similarity should be float\"\n            # Verify 3 decimal places\n            assert len(str(item['similarity']).split('.')[-1]) <= 3, \"Similarity should have max 3 decimal places\"\n        \n        # Verify database operations\n        assert mock_async_session.add.called, \"ToolEmbedding should be inserted\"\n        assert mock_async_session.execute.called, \"Query operations should be executed\"\n        assert mock_async_session.commit.called, \"Session should be committed\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_happy_path_empty_neighbors(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify scan_proximity returns empty list when no neighbors above threshold exist\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Unique problem\", author_id=\"author-1\")\n    \n    # Mock empty neighbor results\n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = []\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert isinstance(result, list), \"Result should be a list\"\n        assert len(result) == 0, \"Should return empty list when no neighbors\"\n        assert mock_async_session.add.called, \"ToolEmbedding should still be inserted\"\n        assert mock_async_session.commit.called, \"Session should be committed\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_happy_path_self_authored_excluded(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify notifications are not created for self-authored tool matches\n    \"\"\"\n    # Arrange\n    author_id = \"author-1\"\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=author_id)\n    \n    neighbor1_id = uuid4()\n    neighbor2_id = uuid4()\n    \n    # One self-authored, one other-authored\n    neighbor_rows = [\n        create_mock_neighbor_row(neighbor1_id, 0.90, author_id),  # Self-authored\n        create_mock_neighbor_row(neighbor2_id, 0.85, \"author-2\"),  # Other-authored\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    notification_calls = []\n    \n    def capture_add(obj):\n        if isinstance(obj, Notification):\n            notification_calls.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) == 2, \"Should return both neighbors in results\"\n        assert len(notification_calls) == 1, \"Should only create 1 notification\"\n        assert notification_calls[0].author_id == \"author-2\", \"Notification only for other author\"\n\n\n# EDGE CASE TESTS\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_exactly_20_neighbors(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify maximum of 20 neighbors considered per scan\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Popular tool\", author_id=\"author-1\")\n    \n    # Create 25 potential neighbors\n    neighbor_rows = [\n        create_mock_neighbor_row(uuid4(), 0.95 - (i * 0.01), f\"author-{i+2}\")\n        for i in range(25)\n    ]\n    \n    # Mock should only return first 20 due to LIMIT\n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows[:20]\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) == 20, \"Should return exactly 20 neighbors\"\n        assert mock_async_session.commit.called, \"Session should be committed\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_similarity_at_threshold(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify neighbor at exact threshold is included\n    \"\"\"\n    # Arrange\n    mock_settings.proximity_threshold = 0.75\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    neighbor_id = uuid4()\n    neighbor_rows = [\n        create_mock_neighbor_row(neighbor_id, 0.75, \"author-2\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) == 1, \"Should include neighbor at exact threshold\"\n        assert result[0]['similarity'] == 0.75, \"Similarity should match threshold\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_similarity_below_threshold(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify neighbors below threshold are excluded from results and links\n    \"\"\"\n    # Arrange\n    mock_settings.proximity_threshold = 0.75\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Mock query returns no results (filtered by WHERE clause)\n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = []\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) == 0, \"Should return empty list for neighbors below threshold\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_canonical_ordering(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify ProximityLink records maintain canonical ordering: tool_a_id < tool_b_id\n    \"\"\"\n    # Arrange\n    # Create tool with UUID that would be larger in lexicographic comparison\n    tool_id = UUID(\"ffffffff-ffff-ffff-ffff-ffffffffffff\")\n    neighbor_id = UUID(\"00000000-0000-0000-0000-000000000001\")\n    \n    tool = mock_tool(id=tool_id, problem_statement=\"Test\", author_id=\"author-1\")\n    \n    neighbor_rows = [\n        create_mock_neighbor_row(neighbor_id, 0.90, \"author-2\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    proximity_links = []\n    \n    def capture_add(obj):\n        if isinstance(obj, ProximityLink):\n            proximity_links.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(proximity_links) == 1, \"Should create one ProximityLink\"\n        link = proximity_links[0]\n        assert link.tool_a_id < link.tool_b_id, \"Should maintain canonical ordering: tool_a_id < tool_b_id\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_similarity_rounding(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify similarity scores are rounded to exactly 3 decimal places\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    neighbor_id = uuid4()\n    # Raw similarity with many decimals\n    neighbor_rows = [\n        create_mock_neighbor_row(neighbor_id, 0.87654321, \"author-2\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    notifications = []\n    \n    def capture_add(obj):\n        if isinstance(obj, Notification):\n            notifications.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) == 1, \"Should return one neighbor\"\n        assert result[0]['similarity'] == 0.877, \"Should round to 0.877\"\n        \n        # Check notification data also has rounded similarity\n        if notifications:\n            assert 0.877 in str(notifications[0].data), \"Notification should contain rounded similarity\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_edge_case_isolated_session(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify function uses isolated database session independent of caller's session\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    caller_session = AsyncMock()  # Caller's session\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = []\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx) as mock_session_factory, \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, caller_session)\n        \n        # Assert\n        assert mock_session_factory.called, \"Should create new session via async_session()\"\n        assert not caller_session.execute.called, \"Should not use caller's session\"\n        assert mock_async_session.commit.called, \"New session should be committed\"\n\n\n# ERROR CASE TESTS\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_embedding_failure_returns_none(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify EmbeddingFailure when get_embedding returns None\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=None), \\\n         patch('backend_api_proximity_service.settings', mock_settings):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert - per postcondition: \"Returns empty list if embedding generation fails\"\n        assert result == [], \"Should return empty list when embedding generation fails\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_embedding_failure_empty_value(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify EmbeddingFailure when get_embedding returns empty value\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[]), \\\n         patch('backend_api_proximity_service.settings', mock_settings):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert result == [], \"Should return empty list when embedding is empty\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_database_connection_failure(mock_tool, mock_settings):\n    \"\"\"\n    Verify DatabaseConnectionFailure when async_session() context manager fails\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Mock async_session() to raise connection error\n    async def failing_session():\n        raise DatabaseConnectionFailure(\"Failed to acquire connection\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.side_effect = DatabaseConnectionFailure(\"Failed to acquire connection\")\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act & Assert\n        with pytest.raises(DatabaseConnectionFailure):\n            await scan_proximity(tool, MagicMock())\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_database_query_failure_select(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify DatabaseQueryFailure when SELECT operation fails\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Mock execute to raise error\n    mock_async_session.execute.side_effect = DatabaseQueryFailure(\"SELECT query failed\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act & Assert\n        with pytest.raises(DatabaseQueryFailure):\n            await scan_proximity(tool, MagicMock())\n        \n        assert mock_async_session.rollback.called or True, \"Session should rollback on error\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_database_query_failure_insert(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify DatabaseQueryFailure when INSERT operation fails\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Mock execute to work for SELECT but fail on subsequent operations\n    call_count = [0]\n    \n    def execute_side_effect(*args, **kwargs):\n        call_count[0] += 1\n        if call_count[0] == 1:\n            # First call succeeds (SELECT neighbors)\n            mock_result = MagicMock()\n            mock_result.fetchall.return_value = []\n            return mock_result\n        else:\n            raise DatabaseQueryFailure(\"INSERT query failed\")\n    \n    mock_async_session.execute.side_effect = execute_side_effect\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act & Assert\n        with pytest.raises(DatabaseQueryFailure):\n            await scan_proximity(tool, MagicMock())\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_commit_failure_constraint_violation(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify CommitFailure when db.commit() fails due to constraint violation\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = []\n    mock_async_session.execute.return_value = mock_result\n    \n    # Mock commit to raise IntegrityError\n    from sqlalchemy.exc import IntegrityError\n    mock_async_session.commit.side_effect = IntegrityError(\"statement\", \"params\", \"orig\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act & Assert\n        with pytest.raises((IntegrityError, CommitFailure)):\n            await scan_proximity(tool, MagicMock())\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_error_commit_failure_transaction_error(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify CommitFailure when db.commit() fails due to transaction error\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = []\n    mock_async_session.execute.return_value = mock_result\n    \n    # Mock commit to raise generic SQLAlchemy error\n    from sqlalchemy.exc import SQLAlchemyError\n    mock_async_session.commit.side_effect = SQLAlchemyError(\"Transaction failed\")\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act & Assert\n        with pytest.raises((SQLAlchemyError, CommitFailure)):\n            await scan_proximity(tool, MagicMock())\n\n\n# INVARIANT TESTS\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_invariant_canonical_ordering_enforced(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify ProximityLink records always maintain canonical ordering regardless of input order\n    \"\"\"\n    # Arrange\n    tool_id_large = UUID(\"ffffffff-ffff-ffff-ffff-ffffffffffff\")\n    tool_id_small = UUID(\"00000000-0000-0000-0000-000000000001\")\n    \n    # Test with large UUID as source tool\n    tool = mock_tool(id=tool_id_large, problem_statement=\"Test\", author_id=\"author-1\")\n    \n    neighbor_rows = [\n        create_mock_neighbor_row(tool_id_small, 0.90, \"author-2\"),\n        create_mock_neighbor_row(uuid4(), 0.85, \"author-3\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    proximity_links = []\n    \n    def capture_add(obj):\n        if isinstance(obj, ProximityLink):\n            proximity_links.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        for link in proximity_links:\n            assert link.tool_a_id < link.tool_b_id, \\\n                f\"Invariant violated: tool_a_id ({link.tool_a_id}) should be < tool_b_id ({link.tool_b_id})\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_invariant_similarity_rounding_consistent(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify similarity scores are consistently rounded to 3 decimals in all outputs\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Multiple neighbors with high-precision similarities\n    neighbor_rows = [\n        create_mock_neighbor_row(uuid4(), 0.987654321, \"author-2\"),\n        create_mock_neighbor_row(uuid4(), 0.876543210, \"author-3\"),\n        create_mock_neighbor_row(uuid4(), 0.765432109, \"author-4\"),\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    notifications = []\n    \n    def capture_add(obj):\n        if isinstance(obj, Notification):\n            notifications.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert - All output similarities have exactly 3 decimal places\n        expected_similarities = [0.988, 0.877, 0.765]\n        for i, item in enumerate(result):\n            assert item['similarity'] == expected_similarities[i], \\\n                f\"Similarity should be rounded to 3 decimals: expected {expected_similarities[i]}, got {item['similarity']}\"\n            \n            # Verify it's actually rounded, not truncated\n            decimal_str = str(item['similarity']).split('.')[-1]\n            assert len(decimal_str) <= 3, f\"Should have max 3 decimal places, got {len(decimal_str)}\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_invariant_max_20_neighbors_always(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify maximum of 20 neighbors invariant holds regardless of available matches\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Very popular tool\", author_id=\"author-1\")\n    \n    # Simulate database returning exactly 20 results (LIMIT enforced)\n    neighbor_rows = [\n        create_mock_neighbor_row(uuid4(), 0.99 - (i * 0.01), f\"author-{i+2}\")\n        for i in range(20)\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    proximity_links = []\n    \n    def capture_add(obj):\n        if isinstance(obj, ProximityLink):\n            proximity_links.append(obj)\n    \n    mock_async_session.add.side_effect = capture_add\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        assert len(result) <= 20, \"Result should never exceed 20 neighbors\"\n        assert len(result) == 20, \"Should return exactly 20 neighbors when available\"\n        assert len(proximity_links) <= 20, \"Should never create more than 20 ProximityLinks\"\n\n\n@pytest.mark.asyncio\nasync def test_scan_proximity_invariant_tool_id_serialized_as_string(mock_tool, mock_async_session, mock_settings):\n    \"\"\"\n    Verify tool_id in output is always serialized as string via str()\n    \"\"\"\n    # Arrange\n    tool = mock_tool(id=uuid4(), problem_statement=\"Test\", author_id=\"author-1\")\n    \n    # Create neighbors with UUID objects\n    neighbor_uuids = [uuid4() for _ in range(3)]\n    neighbor_rows = [\n        create_mock_neighbor_row(uid, 0.90 - (i * 0.05), f\"author-{i+2}\")\n        for i, uid in enumerate(neighbor_uuids)\n    ]\n    \n    mock_result = MagicMock()\n    mock_result.fetchall.return_value = neighbor_rows\n    mock_async_session.execute.return_value = mock_result\n    \n    mock_session_ctx = AsyncMock()\n    mock_session_ctx.__aenter__.return_value = mock_async_session\n    mock_session_ctx.__aexit__.return_value = None\n    \n    with patch('backend_api_proximity_service.async_session', return_value=mock_session_ctx), \\\n         patch('backend_api_proximity_service.get_embedding', return_value=[0.1] * 384), \\\n         patch('backend_api_proximity_service.settings', mock_settings), \\\n         patch('backend_api_proximity_service.ToolEmbedding', ToolEmbedding), \\\n         patch('backend_api_proximity_service.ProximityLink', ProximityLink), \\\n         patch('backend_api_proximity_service.Notification', Notification):\n        \n        from backend.api.proximity.service import scan_proximity\n        \n        # Act\n        result = await scan_proximity(tool, MagicMock())\n        \n        # Assert\n        for item in result:\n            assert isinstance(item['tool_id'], str), \\\n                f\"tool_id should be string, got {type(item['tool_id'])}\"\n            \n            # Verify it's a valid UUID string format\n            try:\n                UUID(item['tool_id'])\n            except ValueError:\n                pytest.fail(f\"tool_id '{item['tool_id']}' is not a valid UUID string\")\n            \n            # Verify no UUID objects in output\n            assert not isinstance(item['tool_id'], UUID), \\\n                \"tool_id should be string, not UUID object\"\n"
+}

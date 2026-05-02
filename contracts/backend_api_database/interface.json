@@ -1,0 +1,114 @@
+{
+  "component_id": "backend_api_database",
+  "name": "Database Session Manager",
+  "description": "Provides async SQLAlchemy database session management for the backend API. Configures a global async engine from settings and exposes a dependency injection function (get_db) that yields database sessions with automatic cleanup.",
+  "version": 1,
+  "types": [
+    {
+      "name": "AsyncSession",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "SQLAlchemy async database session (imported from sqlalchemy.ext.asyncio)",
+      "owner_component": "sqlalchemy.ext.asyncio"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_db",
+      "description": "Async generator that yields a database session for dependency injection. Creates a new AsyncSession from the global async_sessionmaker, yields it for use, and automatically handles cleanup on exit. Designed for use with FastAPI Depends().",
+      "inputs": [],
+      "output_type": "AsyncSession",
+      "error_cases": [
+        {
+          "name": "DatabaseConnectionError",
+          "condition": "If database connection cannot be established (invalid URL, network failure, authentication failure)",
+          "error_type": "sqlalchemy.exc.OperationalError or subclass",
+          "error_data": {}
+        },
+        {
+          "name": "SessionCreationError",
+          "condition": "If async_sessionmaker fails to create session",
+          "error_type": "sqlalchemy.exc.SQLAlchemyError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "Global 'engine' must be initialized with valid database_url from settings",
+        "Global 'async_session' sessionmaker must be initialized"
+      ],
+      "postconditions": [
+        "Yields a valid AsyncSession instance",
+        "Session is automatically closed after context manager exits",
+        "No commit happens automatically (expire_on_commit=False is set)"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Opens database connection via async_session()",
+        "Automatically closes database session on context exit"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "Database server specified in settings.database_url",
+          "description": "Opens async database connection"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "Database connection pool",
+          "description": "Acquires and releases connection from engine pool"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "sqlalchemy.ext.asyncio",
+    "backend.api.config"
+  ],
+  "dependency_contracts": {
+    "sqlalchemy.ext.asyncio": [
+      "AsyncSession",
+      "async_sessionmaker",
+      "create_async_engine"
+    ],
+    "backend.api.config": [
+      "settings"
+    ]
+  },
+  "invariants": [
+    "Global 'engine' is created once at module import with echo=False",
+    "Global 'async_session' sessionmaker is configured with expire_on_commit=False",
+    "Database URL comes from settings.database_url and never changes after initialization",
+    "Each call to get_db() creates a fresh session instance"
+  ],
+  "requires": [
+    "settings.database_url must be a valid async database URL (e.g., postgresql+asyncpg://...)"
+  ],
+  "processing_register": "infrastructure",
+  "data_access": {
+    "reads": [
+      "settings.database_url"
+    ],
+    "writes": [],
+    "rationale": "Reads database configuration from settings to initialize engine. Does not write to data tier directly - individual sessions returned by get_db() are used by consumers to read/write.",
+    "side_effects": [
+      {
+        "type": "database_connection",
+        "classification": "infrastructure",
+        "fields": [
+          "engine",
+          "async_session"
+        ],
+        "rationale": "Manages database connection lifecycle via SQLAlchemy engine and session pool"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

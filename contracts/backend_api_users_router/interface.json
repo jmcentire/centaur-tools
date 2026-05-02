@@ -1,0 +1,685 @@
+{
+  "component_id": "backend_api_users_router",
+  "name": "Users API Router",
+  "description": "FastAPI router module for user profile management, data export, account deletion, and starred tools retrieval. Provides GDPR/CCPA-compliant data export and right-to-erasure functionality for the centaur.tools registry platform.",
+  "version": 1,
+  "types": [
+    {
+      "name": "UserProfile",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User unique identifier",
+          "validators": []
+        },
+        {
+          "name": "username",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User's username",
+          "validators": []
+        },
+        {
+          "name": "display_name",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "User's display name",
+          "validators": []
+        },
+        {
+          "name": "avatar_url",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "URL to user's avatar image",
+          "validators": []
+        },
+        {
+          "name": "bio",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "User biography text",
+          "validators": []
+        },
+        {
+          "name": "tool_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of tools owned by user",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Pydantic model representing a public user profile with tool statistics",
+      "owner_component": ""
+    },
+    {
+      "name": "UpdateProfile",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "display_name",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Optional new display name",
+          "validators": []
+        },
+        {
+          "name": "bio",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Optional new biography text",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Pydantic model for profile update request payload",
+      "owner_component": ""
+    },
+    {
+      "name": "UserProfileResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "username",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "display_name",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "avatar_url",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "bio",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "tools",
+          "type_ref": "list[ToolSummary]",
+          "required": true,
+          "default": "",
+          "description": "List of active tools owned by user",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response structure for get_user_profile endpoint",
+      "owner_component": ""
+    },
+    {
+      "name": "ToolSummary",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "description",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "language",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "created_at",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "ISO-formatted datetime string",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Summary of a tool in user profile",
+      "owner_component": ""
+    },
+    {
+      "name": "UpdateProfileResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'updated' on success",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response for successful profile update",
+      "owner_component": ""
+    },
+    {
+      "name": "DeleteAccountResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'account deleted' on success",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response for successful account deletion",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_user_profile",
+      "description": "Retrieves public user profile by username, including all active tools. Returns 404 if user not found. Performs database read with eager loading of user's tools relationship.",
+      "inputs": [
+        {
+          "name": "username",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Username to look up",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "user_not_found",
+          "condition": "No user exists with the given username",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "User not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "username is a non-empty string"
+      ],
+      "postconditions": [
+        "Returns dict with user data and list of active tools only",
+        "Tool created_at fields are ISO-formatted strings",
+        "User ID is converted to string"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Database read via SELECT query with selectinload for tools relationship"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "Database (User table with tools relationship)",
+          "description": "Queries User by username with eager-loaded tools"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "update_profile",
+      "description": "Updates authenticated user's profile fields (display_name and/or bio). Only updates fields that are not None in the request body. Commits changes to database.",
+      "inputs": [
+        {
+          "name": "body",
+          "type_ref": "UpdateProfile",
+          "required": true,
+          "default": "",
+          "description": "Profile fields to update",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [
+        "User is authenticated (enforced by get_current_user dependency)"
+      ],
+      "postconditions": [
+        "User object display_name updated if body.display_name is not None",
+        "User object bio updated if body.bio is not None",
+        "Changes are committed to database",
+        "Returns {'status': 'updated'}"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Modifies User object in-place",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "User object (display_name, bio fields)",
+          "description": "Updates user profile fields conditionally"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (User table)",
+          "description": "Commits updated user data"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "download_my_data",
+      "description": "GDPR/CCPA data export: aggregates and returns all user data as JSON attachment including profile, tools with tags, forum replies, votes, and notifications. All datetime fields converted to ISO format strings.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "JSONResponse",
+      "error_cases": [],
+      "preconditions": [
+        "User is authenticated (enforced by get_current_user dependency)"
+      ],
+      "postconditions": [
+        "Returns JSONResponse with Content-Disposition header set to attachment",
+        "Filename is 'centaur-tools-data.json'",
+        "Response contains profile, tools, forum_replies, votes, and notifications",
+        "All datetime fields are ISO-formatted strings",
+        "All ID fields are converted to strings",
+        "Tools include full metadata and associated tags"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Database reads from Tool, ForumReply, ToolVote, Notification tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "Database (Tool table with tags relationship)",
+          "description": "Queries all tools authored by user with eager-loaded tags"
+        },
+        {
+          "kind": "reads_file",
+          "target": "Database (ForumReply table)",
+          "description": "Queries all forum replies authored by user"
+        },
+        {
+          "kind": "reads_file",
+          "target": "Database (ToolVote table)",
+          "description": "Queries all votes by user"
+        },
+        {
+          "kind": "reads_file",
+          "target": "Database (Notification table)",
+          "description": "Queries all notifications for user"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "delete_account",
+      "description": "GDPR/CCPA right to erasure: deletes user account and anonymizes/removes associated content. Replaces forum replies and thread bodies with '[deleted]', deactivates tools, deletes votes and notifications, then deletes user record. All operations committed in single transaction.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [
+        "User is authenticated (enforced by get_current_user dependency)"
+      ],
+      "postconditions": [
+        "All ForumReply records by user have body set to '[deleted]'",
+        "All ForumThread records by user have body set to '[deleted]'",
+        "All Tool records by user have is_active set to False",
+        "All ToolVote records by user are deleted",
+        "All Notification records for user are deleted",
+        "User record is deleted from database",
+        "All changes committed atomically",
+        "Returns {'status': 'account deleted'}"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Updates ForumReply table (anonymizes content)",
+        "Updates ForumThread table (anonymizes content)",
+        "Updates Tool table (deactivates tools)",
+        "Deletes from ToolVote table",
+        "Deletes from Notification table",
+        "Deletes from User table",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "Database (ForumReply table)",
+          "description": "Sets body to '[deleted]' for all user's replies"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (ForumThread table)",
+          "description": "Sets body to '[deleted]' for all user's threads"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (Tool table)",
+          "description": "Sets is_active to False for all user's tools"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (ToolVote table)",
+          "description": "Deletes all votes by user"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (Notification table)",
+          "description": "Deletes all notifications for user"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Database (User table)",
+          "description": "Deletes user record"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_starred_tools",
+      "description": "Retrieves all tools the authenticated user has voted for (starred), filtered to only active tools, ordered by vote creation time descending. Includes tool tags.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [
+        "User is authenticated (enforced by get_current_user dependency)"
+      ],
+      "postconditions": [
+        "Returns dict with 'tools' key containing list of starred tools",
+        "Only includes tools where is_active is True",
+        "Tools ordered by ToolVote.created_at descending (most recent first)",
+        "Each tool includes tags as list of strings",
+        "Tool created_at is ISO-formatted string"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Database read via JOIN query on Tool and ToolVote tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "Database (Tool and ToolVote tables with tags relationship)",
+          "description": "Queries tools via join with user's votes, eager-loading tags"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "fastapi.responses",
+    "pydantic",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "sqlalchemy.orm",
+    "backend.api.auth.dependencies",
+    "backend.api.database",
+    "backend.api.models"
+  ],
+  "dependency_contracts": {
+    "backend.api.auth.dependencies": [
+      "get_current_user"
+    ],
+    "backend.api.database": [
+      "get_db"
+    ],
+    "backend.api.models": [
+      "ForumReply",
+      "ForumThread",
+      "Notification",
+      "Tool",
+      "ToolVote",
+      "User"
+    ]
+  },
+  "invariants": [
+    "Router prefix is always '/api/users'",
+    "Router tag is always ['users']",
+    "All datetime fields in responses are ISO-formatted strings via .isoformat()",
+    "All UUID/ID fields in responses are converted to strings",
+    "get_user_profile only returns tools where is_active is True",
+    "get_starred_tools only returns tools where is_active is True",
+    "delete_account anonymizes content with '[deleted]' string literal",
+    "All authenticated endpoints depend on get_current_user",
+    "All endpoints depend on get_db for database session"
+  ],
+  "requires": [],
+  "processing_register": "fastapi_async_router",
+  "data_access": {
+    "reads": [
+      "User",
+      "Tool",
+      "ForumReply",
+      "ForumThread",
+      "ToolVote",
+      "Notification"
+    ],
+    "writes": [
+      "User",
+      "Tool",
+      "ForumReply",
+      "ForumThread",
+      "ToolVote",
+      "Notification"
+    ],
+    "rationale": "Module performs read operations on all listed tables for profile retrieval and data export. Write operations include profile updates, content anonymization during account deletion, and cascading deletions across user-owned data.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "user_data",
+        "fields": [
+          "username",
+          "display_name",
+          "avatar_url",
+          "bio",
+          "email",
+          "created_at"
+        ],
+        "rationale": "Reads user profile data for display and export"
+      },
+      {
+        "type": "database_read",
+        "classification": "user_tools",
+        "fields": [
+          "slug",
+          "name",
+          "description",
+          "problem_statement",
+          "repo_url",
+          "license",
+          "language",
+          "is_active",
+          "created_at"
+        ],
+        "rationale": "Reads tool metadata for profile display and data export"
+      },
+      {
+        "type": "database_write",
+        "classification": "profile_update",
+        "fields": [
+          "display_name",
+          "bio"
+        ],
+        "rationale": "Updates user profile fields via PATCH endpoint"
+      },
+      {
+        "type": "database_write",
+        "classification": "content_anonymization",
+        "fields": [
+          "ForumReply.body",
+          "ForumThread.body"
+        ],
+        "rationale": "Anonymizes user-generated content during account deletion for GDPR compliance"
+      },
+      {
+        "type": "database_write",
+        "classification": "account_deletion",
+        "fields": [
+          "User",
+          "ToolVote",
+          "Notification"
+        ],
+        "rationale": "Hard deletes user record, votes, and notifications during account deletion"
+      },
+      {
+        "type": "database_write",
+        "classification": "tool_deactivation",
+        "fields": [
+          "Tool.is_active"
+        ],
+        "rationale": "Deactivates all user tools during account deletion instead of deleting"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "user_profiles",
+      "user_data_export",
+      "account_deletion",
+      "user_starred_tools"
+    ],
+    "rationale": "This module is the authoritative implementation for user profile management, GDPR/CCPA data export, account deletion with content anonymization, and starred tools retrieval in the centaur.tools platform"
+  }
+}

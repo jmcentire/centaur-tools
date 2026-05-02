@@ -1,0 +1,218 @@
+{
+  "component_id": "backend_api_proximity_service",
+  "name": "Proximity Service",
+  "description": "Generates embeddings for tool problem statements, finds semantically similar tools via vector cosine similarity, creates bidirectional proximity links, and notifies authors of newly discovered tool neighbors.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "scan_proximity",
+      "description": "Generate embedding for tool's problem statement and find neighbors. Uses its own DB session to avoid closed-connection issues. Returns list of similar tools above proximity threshold with similarity scores.",
+      "inputs": [
+        {
+          "name": "tool",
+          "type_ref": "Tool",
+          "required": true,
+          "default": "",
+          "description": "Tool instance with id, problem_statement, name, slug, and author_id attributes",
+          "validators": []
+        },
+        {
+          "name": "_db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Unused AsyncSession parameter (function creates its own session)",
+          "validators": []
+        }
+      ],
+      "output_type": "list[dict]",
+      "error_cases": [
+        {
+          "name": "EmbeddingFailure",
+          "condition": "get_embedding returns None or empty value",
+          "error_type": "SilentFailure",
+          "error_data": {
+            "behavior": "Returns empty list []"
+          }
+        },
+        {
+          "name": "DatabaseConnectionFailure",
+          "condition": "async_session() context manager fails to acquire connection",
+          "error_type": "Exception",
+          "error_data": {
+            "exception_type": "sqlalchemy.exc.OperationalError or similar"
+          }
+        },
+        {
+          "name": "DatabaseQueryFailure",
+          "condition": "SELECT, INSERT, or UPDATE operations fail",
+          "error_type": "Exception",
+          "error_data": {
+            "exception_type": "sqlalchemy.exc.SQLAlchemyError"
+          }
+        },
+        {
+          "name": "CommitFailure",
+          "condition": "db.commit() fails due to constraint violation or transaction error",
+          "error_type": "Exception",
+          "error_data": {
+            "exception_type": "sqlalchemy.exc.IntegrityError or sqlalchemy.exc.SQLAlchemyError"
+          }
+        }
+      ],
+      "preconditions": [
+        "tool.problem_statement must be a non-empty string",
+        "tool.id must be a valid UUID",
+        "settings.proximity_threshold must be defined",
+        "Database connection must be available via async_session()"
+      ],
+      "postconditions": [
+        "ToolEmbedding record exists for tool.id with current embedding",
+        "ProximityLink records created for all neighbors above threshold (canonical ordering: tool_a_id < tool_b_id)",
+        "Notification records created for neighbor authors (excluding self-authored tools)",
+        "Returns empty list if embedding generation fails",
+        "Returns list of dicts with 'tool_id' (str) and 'similarity' (float, rounded to 3 decimals) for neighbors above threshold",
+        "Maximum 20 neighbors considered (LIMIT 20)",
+        "All database changes committed before return"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Calls get_embedding(tool.problem_statement) via network/external service",
+        "Upserts ToolEmbedding record for tool.id",
+        "Inserts ProximityLink records for new neighbors above threshold",
+        "Inserts Notification records for neighbor authors",
+        "Executes vector similarity search using cosine_distance",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "get_embedding",
+          "description": "External embedding API call for tool.problem_statement"
+        },
+        {
+          "kind": "writes_file",
+          "target": "ToolEmbedding table",
+          "description": "Upsert embedding vector for tool"
+        },
+        {
+          "kind": "writes_file",
+          "target": "ProximityLink table",
+          "description": "Insert proximity links for neighbors above threshold"
+        },
+        {
+          "kind": "writes_file",
+          "target": "Notification table",
+          "description": "Create notifications for neighbor tool authors"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "Database session",
+          "description": "Creates new async session, executes queries, commits transaction"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "uuid",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "backend.api.config",
+    "backend.api.database",
+    "backend.api.models",
+    "backend.api.search.router"
+  ],
+  "dependency_contracts": {
+    "backend.api.search.router": [
+      "get_embedding"
+    ],
+    "backend.api.config": [
+      "settings"
+    ],
+    "backend.api.database": [
+      "async_session"
+    ],
+    "backend.api.models": [
+      "Notification",
+      "ProximityLink",
+      "Tool",
+      "ToolEmbedding"
+    ]
+  },
+  "invariants": [
+    "ProximityLink records maintain canonical ordering: tool_a_id < tool_b_id",
+    "Similarity scores are rounded to 3 decimal places in output and notification data",
+    "Proximity links are only created for similarity >= settings.proximity_threshold",
+    "Maximum of 20 nearest neighbors considered per scan",
+    "Notifications are not created for self-authored tool matches (nt.author_id != tool.author_id)",
+    "Function uses isolated database session independent of caller's session",
+    "tool_id in output is serialized as string via str(neighbor_tool_id)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "ToolEmbedding",
+      "ProximityLink",
+      "Tool"
+    ],
+    "writes": [
+      "ToolEmbedding",
+      "ProximityLink",
+      "Notification"
+    ],
+    "rationale": "Reads existing embeddings and proximity links to avoid duplicates; writes embeddings, links, and notifications. Performs vector similarity search on ToolEmbedding.embedding column.",
+    "side_effects": [
+      {
+        "type": "vector_search",
+        "classification": "read",
+        "fields": [
+          "ToolEmbedding.embedding",
+          "ToolEmbedding.tool_id"
+        ],
+        "rationale": "Cosine similarity search to find semantically similar tools"
+      },
+      {
+        "type": "upsert",
+        "classification": "write",
+        "fields": [
+          "ToolEmbedding.tool_id",
+          "ToolEmbedding.embedding"
+        ],
+        "rationale": "Update existing embedding or insert new one"
+      },
+      {
+        "type": "conditional_insert",
+        "classification": "write",
+        "fields": [
+          "ProximityLink.tool_a_id",
+          "ProximityLink.tool_b_id",
+          "ProximityLink.similarity"
+        ],
+        "rationale": "Create proximity link only if not exists and above threshold"
+      },
+      {
+        "type": "conditional_insert",
+        "classification": "write",
+        "fields": [
+          "Notification.user_id",
+          "Notification.type",
+          "Notification.title",
+          "Notification.body",
+          "Notification.data"
+        ],
+        "rationale": "Notify neighbor authors of new proximity matches, excluding self-authored matches"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "proximity_links",
+      "tool_embeddings"
+    ],
+    "rationale": "Owns the logic for generating tool embeddings, computing semantic similarity, and managing proximity relationships between tools. Authoritative source for proximity link creation and neighbor discovery."
+  }
+}

@@ -1,0 +1,420 @@
+{
+  "component_id": "backend_api_search_router",
+  "name": "Search API Router",
+  "description": "FastAPI router providing hybrid search for tools using keyword (full-text), semantic (vector embedding), and tag-based matching with score-based ranking and pagination",
+  "version": 1,
+  "types": [
+    {
+      "name": "SearchToolsResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "tools",
+          "type_ref": "list[ToolResult]",
+          "required": true,
+          "default": "",
+          "description": "List of tool results for the current page",
+          "validators": []
+        },
+        {
+          "name": "total",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Total number of tools scored (before pagination)",
+          "validators": []
+        },
+        {
+          "name": "page",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Current page number",
+          "validators": []
+        },
+        {
+          "name": "per_page",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of results per page",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response structure for search_tools endpoint",
+      "owner_component": ""
+    },
+    {
+      "name": "ToolResult",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "URL-friendly tool identifier",
+          "validators": []
+        },
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool name",
+          "validators": []
+        },
+        {
+          "name": "description",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool description",
+          "validators": []
+        },
+        {
+          "name": "problem_statement",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Problem the tool solves",
+          "validators": []
+        },
+        {
+          "name": "language",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Programming language",
+          "validators": []
+        },
+        {
+          "name": "tags",
+          "type_ref": "list[str]",
+          "required": true,
+          "default": "",
+          "description": "List of tag strings",
+          "validators": []
+        },
+        {
+          "name": "author",
+          "type_ref": "AuthorInfo",
+          "required": true,
+          "default": "",
+          "description": "Author information",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of votes for the tool",
+          "validators": []
+        },
+        {
+          "name": "score",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "Search relevance score (rounded to 4 decimals)",
+          "validators": []
+        },
+        {
+          "name": "created_at",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "ISO 8601 formatted creation timestamp",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Individual tool result in search response",
+      "owner_component": ""
+    },
+    {
+      "name": "AuthorInfo",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "username",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Author username",
+          "validators": []
+        },
+        {
+          "name": "avatar_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Author avatar URL",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Author information in tool result",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_embedding",
+      "description": "Generates text embedding using Google Gemini API. Returns None if API key is not configured or if any exception occurs during the API call.",
+      "inputs": [
+        {
+          "name": "text_input",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Text to generate embedding for",
+          "validators": []
+        }
+      ],
+      "output_type": "list[float] | None",
+      "error_cases": [
+        {
+          "name": "missing_api_key",
+          "condition": "settings.gemini_api_key is not set",
+          "error_type": "None",
+          "error_data": {}
+        },
+        {
+          "name": "embedding_generation_failure",
+          "condition": "Any exception during genai client creation or embed_content call",
+          "error_type": "None",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns None if settings.gemini_api_key is falsy",
+        "Returns None if any exception occurs during embedding generation",
+        "Returns list of float values from result.embeddings[0].values on success"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "network_call"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "Google Gemini API (models/gemini-embedding-001)",
+          "description": "Calls external API to generate text embeddings"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "search_tools",
+      "description": "Hybrid search endpoint that combines full-text search, semantic vector search, and tag matching to find tools. Scores and ranks results, then returns paginated tool metadata with vote counts.",
+      "inputs": [
+        {
+          "name": "q",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Search query string",
+          "validators": [
+            {
+              "kind": "length",
+              "expression": "min_length=1",
+              "error_message": ""
+            }
+          ]
+        },
+        {
+          "name": "mode",
+          "type_ref": "str",
+          "required": false,
+          "default": "hybrid",
+          "description": "Search mode: keyword, semantic, or hybrid",
+          "validators": [
+            {
+              "kind": "regex",
+              "expression": "^(keyword|semantic|hybrid)$",
+              "error_message": ""
+            }
+          ]
+        },
+        {
+          "name": "page",
+          "type_ref": "int",
+          "required": false,
+          "default": "1",
+          "description": "Page number for pagination",
+          "validators": [
+            {
+              "kind": "range",
+              "expression": "ge=1",
+              "error_message": ""
+            }
+          ]
+        },
+        {
+          "name": "per_page",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Number of results per page",
+          "validators": [
+            {
+              "kind": "range",
+              "expression": "ge=1, le=100",
+              "error_message": ""
+            }
+          ]
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [
+        "q has min_length=1 (enforced by FastAPI Query validator)",
+        "mode matches pattern ^(keyword|semantic|hybrid)$ (enforced by FastAPI Query validator)",
+        "page >= 1 (enforced by FastAPI Query validator)",
+        "per_page >= 1 and per_page <= 100 (enforced by FastAPI Query validator)",
+        "db is a valid AsyncSession from get_db dependency"
+      ],
+      "postconditions": [
+        "Returns dict with keys: tools (list), total (int), page (int), per_page (int)",
+        "tools list contains dicts with keys: slug, name, description, problem_statement, language, tags, author, vote_count, score, created_at",
+        "Only active tools (is_active=True) are included in results",
+        "Results are sorted by score in descending order",
+        "Returns empty tools list if no results found or page out of bounds",
+        "total reflects the count of all scored tools before pagination",
+        "Scores are rounded to 4 decimal places"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "reads_database",
+        "network_call (conditional)",
+        "mutates_state (local)"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "Database - Tool, ToolEmbedding, ToolTag, ToolVote tables",
+          "description": "Executes multiple SELECT queries to read tool data, embeddings, tags, and votes"
+        },
+        {
+          "kind": "network_call",
+          "target": "Google Gemini API via get_embedding",
+          "description": "Conditionally calls embedding API when mode is semantic or hybrid"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": null,
+        "max_memory_mb": null,
+        "complexity": "O(n log n)"
+      }
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "google.genai",
+    "backend.config",
+    "backend.database",
+    "backend.models",
+    "uuid"
+  ],
+  "dependency_contracts": {
+    "backend.config": [
+      "settings",
+      "settings.gemini_api_key"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "Tool",
+      "ToolEmbedding",
+      "ToolTag",
+      "ToolVote"
+    ]
+  },
+  "invariants": [
+    "Router prefix is /api/search",
+    "Router is tagged with ['search']",
+    "Full-text search queries limit to per_page * 2 results",
+    "Vector search queries limit to per_page * 2 results",
+    "Tag match score is 0.5 for exact matches not already scored",
+    "Fallback name match score is 0.1",
+    "Only active tools (is_active=True) are returned",
+    "Full-text search uses English language configuration for PostgreSQL tsquery",
+    "Semantic search uses cosine distance with formula: 1 - cosine_distance",
+    "Hybrid mode takes max score when tool appears in multiple search results",
+    "Tag matching is case-insensitive and whitespace-stripped",
+    "Empty results return page structure with empty tools list"
+  ],
+  "requires": [
+    "PostgreSQL with pg_trgm and vector extensions for full-text and vector search",
+    "Google Gemini API key configured in settings for semantic search mode"
+  ],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "Tool",
+      "ToolEmbedding",
+      "ToolTag",
+      "ToolVote"
+    ],
+    "writes": [],
+    "rationale": "Read-only search endpoint that queries Tool, ToolEmbedding, ToolTag, and ToolVote tables to assemble ranked search results",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "read",
+        "fields": [
+          "Tool.id",
+          "Tool.slug",
+          "Tool.name",
+          "Tool.description",
+          "Tool.problem_statement",
+          "Tool.language",
+          "Tool.is_active",
+          "Tool.search_vector",
+          "Tool.created_at",
+          "ToolEmbedding.tool_id",
+          "ToolEmbedding.embedding",
+          "ToolTag.tag",
+          "ToolVote.tool_id"
+        ],
+        "rationale": "Multiple SELECT queries to fetch and score tools based on search criteria"
+      },
+      {
+        "type": "external_api_call",
+        "classification": "network",
+        "fields": [],
+        "rationale": "Conditional call to Google Gemini API for semantic embedding generation"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "search",
+      "tool_discovery"
+    ],
+    "rationale": "This component owns the hybrid search logic combining keyword, semantic, and tag-based tool discovery"
+  }
+}

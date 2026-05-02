@@ -1,0 +1,135 @@
+{
+  "component_id": "backend_api_main",
+  "name": "Backend API Main Application",
+  "description": "FastAPI application entry point for centaur.tools API. Orchestrates router composition for auth, feed, forum, notifications, provenance, registry, search, users, and voting modules. Configures global dependency overrides for cookie-based authentication. Provides health check endpoint.",
+  "version": 1,
+  "types": [
+    {
+      "name": "HealthResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Health status indicator, always 'ok'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response type for health endpoint",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "health",
+      "description": "Health check endpoint that returns a static success status. Always returns {\"status\": \"ok\"} with no validation or actual system health checks.",
+      "inputs": [],
+      "output_type": "dict[str, str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dictionary with single key 'status' having value 'ok'"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 10,
+        "max_memory_mb": 1,
+        "complexity": "O(1)"
+      }
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "backend.api.auth.router",
+    "backend.api.feed.router",
+    "backend.api.forum.router",
+    "backend.api.notifications.router",
+    "backend.api.provenance.router",
+    "backend.api.registry.router",
+    "backend.api.search.router",
+    "backend.api.users.router",
+    "backend.api.voting.router",
+    "backend.api.auth.dependencies"
+  ],
+  "dependency_contracts": {
+    "fastapi": [
+      "FastAPI"
+    ],
+    "backend.api.auth.router": [
+      "router",
+      "get_current_user"
+    ],
+    "backend.api.auth.dependencies": [
+      "get_current_user"
+    ],
+    "backend.api.feed.router": [
+      "router"
+    ],
+    "backend.api.forum.router": [
+      "router"
+    ],
+    "backend.api.notifications.router": [
+      "router"
+    ],
+    "backend.api.provenance.router": [
+      "router"
+    ],
+    "backend.api.registry.router": [
+      "router"
+    ],
+    "backend.api.search.router": [
+      "router"
+    ],
+    "backend.api.users.router": [
+      "router"
+    ],
+    "backend.api.voting.router": [
+      "router"
+    ]
+  },
+  "invariants": [
+    "FastAPI app instance is configured with title='centaur.tools API'",
+    "FastAPI app version is '1.0.0'",
+    "dependency_overrides maps placeholder_get_current_user to real_get_current_user for cookie-based auth",
+    "Nine routers are registered: auth, feed, users, registry, search, voting, provenance, forum, notifications (in that order)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "This module is the application composition layer. No direct data access occurs; all data operations are delegated to included routers.",
+    "side_effects": [
+      {
+        "type": "application_initialization",
+        "classification": "startup",
+        "fields": [
+          "app.dependency_overrides",
+          "app.routes"
+        ],
+        "rationale": "Initializes FastAPI app and registers routers during module import"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "api_orchestration",
+      "health_monitoring"
+    ],
+    "rationale": "Owns the top-level application composition and global configuration. Delegates domain authority to specialized routers."
+  }
+}

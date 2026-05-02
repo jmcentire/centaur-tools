@@ -1,0 +1,113 @@
+{
+  "component_id": "backend_api_database",
+  "name": "Database Session Manager",
+  "description": "Provides async SQLAlchemy database session management using a connection pool. Exposes a generator function to yield database sessions with automatic lifecycle management (commit/rollback/close).",
+  "version": 1,
+  "types": [
+    {
+      "name": "AsyncSession",
+      "kind": "primitive",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "SQLAlchemy async database session type from sqlalchemy.ext.asyncio",
+      "owner_component": "sqlalchemy.ext.asyncio"
+    },
+    {
+      "name": "AsyncGenerator[AsyncSession, None]",
+      "kind": "union",
+      "fields": [],
+      "item_type": "AsyncSession",
+      "variants": [],
+      "inner_types": [],
+      "description": "Async generator yielding AsyncSession instances",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_db",
+      "description": "Async generator that yields a SQLAlchemy AsyncSession with automatic lifecycle management. Sessions expire on close but not on commit (expire_on_commit=False). Used as a dependency injection target in FastAPI endpoints.",
+      "inputs": [],
+      "output_type": "AsyncGenerator[AsyncSession, None]",
+      "error_cases": [
+        {
+          "name": "DatabaseConnectionError",
+          "condition": "Database URL is invalid or database is unreachable",
+          "error_type": "sqlalchemy.exc.OperationalError",
+          "error_data": {}
+        },
+        {
+          "name": "DatabaseConfigurationError",
+          "condition": "settings.database_url is not set or malformed",
+          "error_type": "AttributeError or ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.database_url must be configured and accessible",
+        "Database engine must be initialized successfully"
+      ],
+      "postconditions": [
+        "Yields exactly one AsyncSession instance",
+        "Session is automatically closed after context exit",
+        "Session objects do not expire on commit",
+        "Uncommitted transactions are rolled back on context exit"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Establishes database connection from connection pool",
+        "Manages transaction lifecycle (implicit begin/commit/rollback)"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database connection pool",
+          "description": "Acquires and releases connection from pool"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "sqlalchemy.ext.asyncio",
+    "backend.api.config"
+  ],
+  "dependency_contracts": {
+    "backend.api.config": [
+      "settings.database_url"
+    ]
+  },
+  "invariants": [
+    "engine is initialized once at module load with echo=False",
+    "async_session factory configured with expire_on_commit=False",
+    "Each invocation of get_db() yields a new session instance from the factory"
+  ],
+  "requires": [],
+  "processing_register": "infrastructure",
+  "data_access": {
+    "reads": [
+      "database connection pool"
+    ],
+    "writes": [
+      "database connections"
+    ],
+    "rationale": "Manages database session lifecycle, acquires connections from pool, may execute transactions that write to database",
+    "side_effects": [
+      {
+        "type": "connection_pool_access",
+        "classification": "infrastructure",
+        "fields": [],
+        "rationale": "Manages connection pooling for database access"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "database_session_lifecycle"
+    ],
+    "rationale": "Owns the creation and lifecycle management of database sessions for the entire backend API"
+  }
+}

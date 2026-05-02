@@ -1,0 +1,1205 @@
+{
+  "component_id": "backend_api_forum_router",
+  "name": "Forum Router API",
+  "description": "FastAPI router module providing REST endpoints for forum functionality including categories, threads, replies, and voting. Handles CRUD operations for forum content with authentication, pagination, and vote tracking.",
+  "version": 1,
+  "types": [
+    {
+      "name": "CreateThread",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "title",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Thread title",
+          "validators": []
+        },
+        {
+          "name": "body",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Thread body content",
+          "validators": []
+        },
+        {
+          "name": "category_slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Slug identifier of the target category",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Request payload for creating a new forum thread",
+      "owner_component": ""
+    },
+    {
+      "name": "CreateReply",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "body",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Reply body content",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Request payload for creating a reply to a thread",
+      "owner_component": ""
+    },
+    {
+      "name": "UpdateReply",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "body",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Updated reply body content",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Request payload for updating an existing reply",
+      "owner_component": ""
+    },
+    {
+      "name": "CategoryListResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "categories",
+          "type_ref": "list[CategoryItem]",
+          "required": true,
+          "default": "",
+          "description": "List of category objects",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response containing list of forum categories",
+      "owner_component": ""
+    },
+    {
+      "name": "CategoryItem",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "description",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "thread_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Individual category in list response",
+      "owner_component": ""
+    },
+    {
+      "name": "ThreadListResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "category",
+          "type_ref": "CategoryInfo",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "threads",
+          "type_ref": "list[ThreadItem]",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "total",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "page",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "per_page",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Paginated response containing threads for a category",
+      "owner_component": ""
+    },
+    {
+      "name": "ThreadDetailResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "title",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "body",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "category",
+          "type_ref": "CategoryInfo",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "author",
+          "type_ref": "AuthorInfo",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "is_pinned",
+          "type_ref": "bool",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "is_locked",
+          "type_ref": "bool",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "tool",
+          "type_ref": "ToolInfo | None",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "replies",
+          "type_ref": "list[ReplyItem]",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "created_at",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "ISO format timestamp",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Full thread details including replies",
+      "owner_component": ""
+    },
+    {
+      "name": "CreateResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Generic creation success response",
+      "owner_component": ""
+    },
+    {
+      "name": "VoteResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response from vote/unvote operations",
+      "owner_component": ""
+    },
+    {
+      "name": "StatusResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Simple status response",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "list_categories",
+      "description": "Retrieves all forum categories ordered by sort_order with thread counts",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected via FastAPI dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dictionary with 'categories' key containing list of category objects",
+        "Each category includes slug, name, description, and thread_count",
+        "Categories ordered by sort_order ascending"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads from ForumCategory and ForumThread tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Queries ForumCategory and ForumThread tables"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "list_threads",
+      "description": "Lists paginated threads for a specific category with vote counts and user vote status",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Category slug identifier",
+          "validators": []
+        },
+        {
+          "name": "page",
+          "type_ref": "int",
+          "required": false,
+          "default": "1",
+          "description": "Page number (minimum 1)",
+          "validators": []
+        },
+        {
+          "name": "per_page",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Results per page (1-100)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User | None",
+          "required": false,
+          "default": "",
+          "description": "Optional authenticated user",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "category_not_found",
+          "condition": "Category with given slug does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Category not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "page >= 1",
+        "per_page >= 1 and per_page <= 100"
+      ],
+      "postconditions": [
+        "Returns category info, paginated threads list, total count, page, per_page",
+        "Threads ordered by is_pinned desc, last_activity_at desc",
+        "Vote counts aggregated for all threads",
+        "User vote status included if user authenticated"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads from ForumCategory, ForumThread, ThreadVote, User tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Queries multiple forum tables with joins"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_thread",
+      "description": "Retrieves full thread details including all replies, author info, and linked tool data if present",
+      "inputs": [
+        {
+          "name": "thread_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of the thread",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "thread_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "thread_not_found",
+          "condition": "Thread with given ID does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Thread not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "thread_id must be valid UUID string"
+      ],
+      "postconditions": [
+        "Returns complete thread with author, category, replies, and optional tool data",
+        "Replies sorted by created_at ascending",
+        "Tool data included only if thread.tool exists and is_active=True",
+        "All datetime fields returned as ISO format strings"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads from ForumThread, ForumReply, ForumCategory, User, Tool, ToolVote tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Queries thread with eager-loaded relationships"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "create_thread",
+      "description": "Creates a new forum thread in the specified category",
+      "inputs": [
+        {
+          "name": "body",
+          "type_ref": "CreateThread",
+          "required": true,
+          "default": "",
+          "description": "Thread creation payload",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user (injected)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "category_not_found",
+          "condition": "Category with body.category_slug does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Category not found"
+          }
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated (dependency fails)",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "Category with body.category_slug must exist"
+      ],
+      "postconditions": [
+        "New ForumThread record created in database",
+        "Returns id (UUID string) and status='created'",
+        "Thread.author_id set to user.id",
+        "Thread.category_id set to matching category"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Writes to ForumThread table",
+        "Reads from ForumCategory table"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Inserts new thread record"
+        },
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Validates category existence"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "create_reply",
+      "description": "Creates a reply to an existing thread and updates thread metadata",
+      "inputs": [
+        {
+          "name": "thread_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of target thread",
+          "validators": []
+        },
+        {
+          "name": "body",
+          "type_ref": "CreateReply",
+          "required": true,
+          "default": "",
+          "description": "Reply creation payload",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "thread_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "thread_not_found",
+          "condition": "Thread with given ID does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Thread not found"
+          }
+        },
+        {
+          "name": "thread_locked",
+          "condition": "Thread.is_locked is True",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "Thread is locked"
+          }
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "thread_id must be valid UUID string",
+        "Thread must exist",
+        "Thread must not be locked (is_locked=False)"
+      ],
+      "postconditions": [
+        "New ForumReply record created",
+        "Thread.reply_count incremented by 1",
+        "Thread.last_activity_at updated to current UTC time",
+        "Returns reply id (UUID string) and status='created'"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Writes to ForumReply and ForumThread tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Inserts reply and updates thread metadata"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "thread",
+          "description": "Increments reply_count and updates last_activity_at"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "edit_reply",
+      "description": "Updates the body of an existing reply (author-only)",
+      "inputs": [
+        {
+          "name": "reply_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of reply to edit",
+          "validators": []
+        },
+        {
+          "name": "body",
+          "type_ref": "UpdateReply",
+          "required": true,
+          "default": "",
+          "description": "Updated reply content",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "reply_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "reply_not_found",
+          "condition": "Reply with given ID does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Reply not found"
+          }
+        },
+        {
+          "name": "forbidden",
+          "condition": "User is not the reply author",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "Not the author"
+          }
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "reply_id must be valid UUID string",
+        "Reply must exist",
+        "User must be the reply author (reply.author_id == user.id)"
+      ],
+      "postconditions": [
+        "Reply.body updated to body.body",
+        "Reply.updated_at set to current UTC time",
+        "Returns status='updated'"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Writes to ForumReply table"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Updates reply body and timestamp"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "delete_reply",
+      "description": "Soft-deletes a reply by setting body to '[deleted]' and decrements thread reply count",
+      "inputs": [
+        {
+          "name": "reply_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of reply to delete",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "reply_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "reply_not_found",
+          "condition": "Reply with given ID does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Reply not found"
+          }
+        },
+        {
+          "name": "forbidden",
+          "condition": "User is not the reply author",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "Not the author"
+          }
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "reply_id must be valid UUID string",
+        "Reply must exist",
+        "User must be the reply author"
+      ],
+      "postconditions": [
+        "Reply.body set to '[deleted]'",
+        "Reply.updated_at set to current UTC time",
+        "Thread.reply_count decremented by 1 (minimum 0)",
+        "Returns status='deleted'"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Writes to ForumReply and ForumThread tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Soft-deletes reply and updates thread count"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "thread",
+          "description": "Decrements reply_count"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "vote_thread",
+      "description": "Adds user vote to a thread (idempotent - returns existing vote count if already voted)",
+      "inputs": [
+        {
+          "name": "thread_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of thread to vote on",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "thread_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "thread_not_found",
+          "condition": "Thread with given ID does not exist",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Thread not found"
+          }
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "thread_id must be valid UUID string",
+        "Thread must exist"
+      ],
+      "postconditions": [
+        "If not already voted: creates new ThreadVote record",
+        "Returns status ('voted' or 'already_voted') and current vote_count",
+        "Vote count reflects total votes for thread"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "May write to ThreadVote table",
+        "Reads from ForumThread and ThreadVote tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Inserts vote if not already present"
+        },
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Checks existing vote and counts total votes"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "unvote_thread",
+      "description": "Removes user vote from a thread (idempotent - returns current count if not voted)",
+      "inputs": [
+        {
+          "name": "thread_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of thread to unvote",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "thread_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "unauthorized",
+          "condition": "User is not authenticated",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "thread_id must be valid UUID string"
+      ],
+      "postconditions": [
+        "If vote exists: deletes ThreadVote record",
+        "Returns status ('removed' or 'not_voted') and current vote_count",
+        "Vote count reflects total votes for thread after removal"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "May delete from ThreadVote table",
+        "Reads from ThreadVote table"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Deletes vote if present"
+        },
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Checks existing vote and counts remaining votes"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "pydantic",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "sqlalchemy.orm",
+    "datetime",
+    "uuid",
+    "backend.auth.dependencies",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.auth.dependencies": [
+      "get_current_user",
+      "get_optional_user"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "ForumCategory",
+      "ForumReply",
+      "ForumThread",
+      "ThreadVote",
+      "Tool",
+      "ToolVote",
+      "User"
+    ]
+  },
+  "invariants": [
+    "Thread reply_count must be >= 0",
+    "Soft-deleted replies have body='[deleted]'",
+    "Thread.last_activity_at updated when reply added",
+    "Pagination: page >= 1, per_page between 1 and 100",
+    "Thread IDs and reply IDs are UUIDs",
+    "All datetime fields stored as UTC and returned as ISO format strings",
+    "Threads ordered by is_pinned (desc), then last_activity_at (desc) in listings",
+    "Replies sorted by created_at (asc) in thread details",
+    "Vote operations are idempotent"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "ForumCategory",
+      "ForumThread",
+      "ForumReply",
+      "ThreadVote",
+      "User",
+      "Tool",
+      "ToolVote"
+    ],
+    "writes": [
+      "ForumThread",
+      "ForumReply",
+      "ThreadVote"
+    ],
+    "rationale": "Forum router reads from and writes to forum-related database tables. Reads categories, threads, replies, votes. Writes threads, replies, votes. Updates thread metadata and reply content.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "query",
+        "fields": [
+          "ForumCategory.slug",
+          "ForumCategory.name",
+          "ForumCategory.description",
+          "ForumCategory.sort_order",
+          "ForumThread.category_id",
+          "ForumThread.id",
+          "ForumThread.title",
+          "ForumThread.body",
+          "ForumThread.author_id",
+          "ForumThread.is_pinned",
+          "ForumThread.is_locked",
+          "ForumThread.reply_count",
+          "ForumThread.last_activity_at",
+          "ForumThread.created_at",
+          "ForumThread.tool_id",
+          "ForumReply.id",
+          "ForumReply.body",
+          "ForumReply.author_id",
+          "ForumReply.thread_id",
+          "ForumReply.created_at",
+          "ForumReply.updated_at",
+          "ThreadVote.thread_id",
+          "ThreadVote.user_id",
+          "User.username",
+          "User.display_name",
+          "User.avatar_url",
+          "Tool.slug",
+          "Tool.name",
+          "Tool.description",
+          "Tool.language",
+          "Tool.repo_url",
+          "Tool.is_active",
+          "ToolVote.tool_id"
+        ],
+        "rationale": "Reads forum data for display and authorization checks"
+      },
+      {
+        "type": "database_write",
+        "classification": "mutation",
+        "fields": [
+          "ForumThread.category_id",
+          "ForumThread.author_id",
+          "ForumThread.title",
+          "ForumThread.body",
+          "ForumThread.reply_count",
+          "ForumThread.last_activity_at",
+          "ForumReply.thread_id",
+          "ForumReply.author_id",
+          "ForumReply.body",
+          "ForumReply.updated_at",
+          "ThreadVote.thread_id",
+          "ThreadVote.user_id"
+        ],
+        "rationale": "Creates and updates forum content and votes"
+      },
+      {
+        "type": "soft_delete",
+        "classification": "mutation",
+        "fields": [
+          "ForumReply.body"
+        ],
+        "rationale": "Soft-deletes replies by setting body to '[deleted]'"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

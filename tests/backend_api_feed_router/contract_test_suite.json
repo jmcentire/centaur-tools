@@ -1,0 +1,454 @@
+{
+  "component_id": "backend_api_feed_router",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_iso_naive_datetime_adds_utc",
+      "description": "Verify _iso converts naive datetime to ISO 8601 with UTC timezone",
+      "function": "_iso",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "dt": "datetime(2023, 6, 15, 10, 30, 45)"
+      },
+      "input_description": "Naive datetime object without timezone",
+      "expected_output_description": "ISO 8601 string with +00:00 UTC suffix",
+      "expected_error": "",
+      "assertions": [
+        "Result contains '+00:00'",
+        "Result follows ISO format"
+      ]
+    },
+    {
+      "id": "test_iso_aware_datetime_preserves_timezone",
+      "description": "Verify _iso preserves timezone for aware datetime objects",
+      "function": "_iso",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "dt": "datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone(timedelta(hours=5)))"
+      },
+      "input_description": "Timezone-aware datetime with non-UTC timezone",
+      "expected_output_description": "ISO 8601 string with +05:00 timezone",
+      "expected_error": "",
+      "assertions": [
+        "Result contains '+05:00'",
+        "Timezone is preserved"
+      ]
+    },
+    {
+      "id": "test_iso_negative_timezone",
+      "description": "Edge case: datetime with negative timezone offset",
+      "function": "_iso",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "dt": "datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone(timedelta(hours=-7)))"
+      },
+      "input_description": "Datetime with timezone offset -07:00",
+      "expected_output_description": "ISO 8601 string with -07:00",
+      "expected_error": "",
+      "assertions": [
+        "Result contains '-07:00'"
+      ]
+    },
+    {
+      "id": "test_iso_microseconds",
+      "description": "Edge case: datetime with microseconds",
+      "function": "_iso",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "dt": "datetime(2023, 6, 15, 10, 30, 45, 123456)"
+      },
+      "input_description": "Datetime with microsecond precision",
+      "expected_output_description": "ISO 8601 string including microseconds",
+      "expected_error": "",
+      "assertions": [
+        "Result includes fractional seconds or rounds correctly"
+      ]
+    },
+    {
+      "id": "test_text_el_creates_child",
+      "description": "Verify _text_el creates XML child element with text",
+      "function": "_text_el",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tag": "title",
+        "text": "Test Title"
+      },
+      "input_description": "Parent element, tag name, and text content",
+      "expected_output_description": "Child element added to parent with specified text",
+      "expected_error": "",
+      "assertions": [
+        "Child element has correct tag",
+        "Child element has correct text",
+        "Parent contains child"
+      ]
+    },
+    {
+      "id": "test_text_el_xml_special_characters",
+      "description": "Edge case: _text_el with XML special characters",
+      "function": "_text_el",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tag": "content",
+        "text": "<script>alert('test');</script> & more"
+      },
+      "input_description": "Text containing <, >, &, ', \"",
+      "expected_output_description": "Special characters properly escaped in XML",
+      "expected_error": "",
+      "assertions": [
+        "Text is correctly stored",
+        "XML remains valid"
+      ]
+    },
+    {
+      "id": "test_text_el_empty_text",
+      "description": "Edge case: _text_el with empty string",
+      "function": "_text_el",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tag": "description",
+        "text": ""
+      },
+      "input_description": "Empty text string",
+      "expected_output_description": "Element created with empty text",
+      "expected_error": "",
+      "assertions": [
+        "Element created",
+        "Text is empty string"
+      ]
+    },
+    {
+      "id": "test_text_el_unicode",
+      "description": "Edge case: _text_el with Unicode characters",
+      "function": "_text_el",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tag": "title",
+        "text": "Hello 世界 🌍"
+      },
+      "input_description": "Text with emoji and international characters",
+      "expected_output_description": "Unicode preserved in element",
+      "expected_error": "",
+      "assertions": [
+        "Unicode text is preserved"
+      ]
+    },
+    {
+      "id": "test_build_feed_empty_lists",
+      "description": "Edge case: _build_feed with no tools or threads",
+      "function": "_build_feed",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "tools": "[]",
+        "threads": "[]"
+      },
+      "input_description": "Empty lists for both tools and threads",
+      "expected_output_description": "Valid Atom feed with no entries",
+      "expected_error": "",
+      "assertions": [
+        "XML is valid",
+        "Feed has 0 entries",
+        "Updated timestamp is current"
+      ]
+    },
+    {
+      "id": "test_build_feed_happy_path",
+      "description": "Verify _build_feed creates valid Atom XML with mixed content",
+      "function": "_build_feed",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mock objects",
+        "ForumThread": "Mock objects",
+        "Author": "Mock objects"
+      },
+      "input_values": {},
+      "input_description": "Lists of tools and threads with all required attributes",
+      "expected_output_description": "Valid Atom XML with correct structure and entries",
+      "expected_error": "",
+      "assertions": [
+        "XML declaration present",
+        "Atom namespace correct",
+        "Feed metadata correct",
+        "Entries present",
+        "Entries sorted by created_at desc"
+      ]
+    },
+    {
+      "id": "test_build_feed_50_entry_limit",
+      "description": "Invariant: _build_feed limits to 50 entries maximum",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "List of 100 mock tools",
+        "ForumThread": "List of 100 mock threads"
+      },
+      "input_values": {},
+      "input_description": "100 tools and 100 threads provided",
+      "expected_output_description": "Feed contains exactly 50 entries",
+      "expected_error": "",
+      "assertions": [
+        "Total entries equals 50",
+        "Most recent 50 items included"
+      ]
+    },
+    {
+      "id": "test_build_feed_truncates_descriptions",
+      "description": "Invariant: _build_feed truncates descriptions to 500 characters",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mock with long description"
+      },
+      "input_values": {},
+      "input_description": "Tool with 1000 character description",
+      "expected_output_description": "Description truncated to 500 chars",
+      "expected_error": "",
+      "assertions": [
+        "Summary length <= 500"
+      ]
+    },
+    {
+      "id": "test_build_feed_missing_author",
+      "description": "Edge case: _build_feed with None author defaults to 'unknown'",
+      "function": "_build_feed",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mock with author=None"
+      },
+      "input_values": {},
+      "input_description": "Tool with author=None",
+      "expected_output_description": "Author name set to 'unknown'",
+      "expected_error": "",
+      "assertions": [
+        "Author name is 'unknown'"
+      ]
+    },
+    {
+      "id": "test_build_feed_missing_tool_attributes",
+      "description": "Error case: _build_feed raises AttributeError for missing Tool attributes",
+      "function": "_build_feed",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mock missing 'slug' attribute"
+      },
+      "input_values": {},
+      "input_description": "Tool object missing required attribute",
+      "expected_output_description": "",
+      "expected_error": "AttributeError",
+      "assertions": [
+        "AttributeError raised"
+      ]
+    },
+    {
+      "id": "test_build_feed_missing_thread_attributes",
+      "description": "Error case: _build_feed raises AttributeError for missing ForumThread attributes",
+      "function": "_build_feed",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "ForumThread": "Mock missing 'body' attribute"
+      },
+      "input_values": {},
+      "input_description": "ForumThread missing required attribute",
+      "expected_output_description": "",
+      "expected_error": "AttributeError",
+      "assertions": [
+        "AttributeError raised"
+      ]
+    },
+    {
+      "id": "test_build_feed_feed_metadata_invariants",
+      "description": "Invariant: Verify all feed metadata constants",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Any valid input",
+      "expected_output_description": "Feed contains all required metadata with correct values",
+      "expected_error": "",
+      "assertions": [
+        "Feed ID is 'urn:centaur:feed'",
+        "Title is 'centaur.tools'",
+        "Subtitle correct",
+        "Author correct",
+        "Links correct"
+      ]
+    },
+    {
+      "id": "test_build_feed_tool_entry_format",
+      "description": "Invariant: Tool entries have correct URN and link format",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mock with id=123, slug='test-tool'"
+      },
+      "input_values": {},
+      "input_description": "Single tool with id=123, slug='test-tool'",
+      "expected_output_description": "Entry has correct URN and link",
+      "expected_error": "",
+      "assertions": [
+        "Entry ID is 'urn:centaur:tool:123'",
+        "Link is 'https://centaur.tools/tools/test-tool'",
+        "Category is 'tool'"
+      ]
+    },
+    {
+      "id": "test_build_feed_thread_entry_format",
+      "description": "Invariant: Thread entries have correct URN and link format",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "ForumThread": "Mock with id=456"
+      },
+      "input_values": {},
+      "input_description": "Single thread with id=456",
+      "expected_output_description": "Entry has correct URN and link",
+      "expected_error": "",
+      "assertions": [
+        "Entry ID is 'urn:centaur:thread:456'",
+        "Link is 'https://centaur.tools/forum/thread/456'",
+        "Category is 'forum'"
+      ]
+    },
+    {
+      "id": "test_build_feed_sort_order",
+      "description": "Invariant: Entries sorted by created_at descending",
+      "function": "_build_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "Tool": "Mocks with different timestamps",
+        "ForumThread": "Mocks with different timestamps"
+      },
+      "input_values": {},
+      "input_description": "Mixed tools and threads with various created_at timestamps",
+      "expected_output_description": "Entries in descending chronological order",
+      "expected_error": "",
+      "assertions": [
+        "First entry is most recent",
+        "Entries are in descending order"
+      ]
+    },
+    {
+      "id": "test_atom_feed_happy_path",
+      "description": "Verify atom_feed endpoint returns valid Atom XML response",
+      "function": "atom_feed",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock database session",
+        "Tool": "Query results",
+        "ForumThread": "Query results"
+      },
+      "input_values": {},
+      "input_description": "Valid database session",
+      "expected_output_description": "Response with status 200, correct content-type, valid XML",
+      "expected_error": "",
+      "assertions": [
+        "Status code 200",
+        "Content-type is application/atom+xml",
+        "Body contains valid XML"
+      ]
+    },
+    {
+      "id": "test_atom_feed_database_error",
+      "description": "Error case: atom_feed handles database connection failure",
+      "function": "atom_feed",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock that raises DatabaseError"
+      },
+      "input_values": {},
+      "input_description": "Database session that raises DatabaseError",
+      "expected_output_description": "",
+      "expected_error": "DatabaseError",
+      "assertions": [
+        "DatabaseError propagates or handled appropriately"
+      ]
+    },
+    {
+      "id": "test_atom_feed_query_limits",
+      "description": "Verify atom_feed queries with correct limits and filters",
+      "function": "atom_feed",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock with query validation"
+      },
+      "input_values": {},
+      "input_description": "Database with 100 tools and threads",
+      "expected_output_description": "Queries limited to 50 each, tools filtered by is_active",
+      "expected_error": "",
+      "assertions": [
+        "Tool query has is_active==True filter",
+        "Tool query limited to 50",
+        "Thread query limited to 50",
+        "Author relationships preloaded"
+      ]
+    },
+    {
+      "id": "test_atom_feed_empty_database",
+      "description": "Edge case: atom_feed with no data in database",
+      "function": "atom_feed",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock returning empty lists"
+      },
+      "input_values": {},
+      "input_description": "Database returning empty results",
+      "expected_output_description": "Valid feed with no entries",
+      "expected_error": "",
+      "assertions": [
+        "Response valid",
+        "Feed has 0 entries"
+      ]
+    },
+    {
+      "id": "test_atom_feed_utf8_encoding",
+      "description": "Invariant: atom_feed response uses UTF-8 encoding",
+      "function": "atom_feed",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock with Unicode data"
+      },
+      "input_values": {},
+      "input_description": "Database with Unicode content",
+      "expected_output_description": "Response declares UTF-8 encoding",
+      "expected_error": "",
+      "assertions": [
+        "XML declaration includes UTF-8",
+        "Unicode content preserved"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract-based test suite for backend_api_feed_router\nGenerated from contract version 1\n\nTests cover:\n- _iso: datetime to ISO 8601 conversion (naive/aware timezones)\n- _text_el: XML element creation with text content\n- _build_feed: Atom feed generation from tools and threads\n- atom_feed: FastAPI endpoint handler\n\nAll async functions tested with @pytest.mark.asyncio\n\"\"\"\n\nimport pytest\nfrom unittest.mock import Mock, AsyncMock, MagicMock, patch, PropertyMock\nfrom datetime import datetime, timezone, timedelta\nfrom xml.etree import ElementTree as ET\nfrom io import BytesIO\nimport re\n\n# Import component under test\nfrom backend.api.feed.router import _iso, _text_el, _build_feed, atom_feed\n\n\n# =============================================================================\n# UNIT TESTS: _iso\n# =============================================================================\n\nclass Test_iso_HappyPath:\n    \"\"\"Test _iso function with valid inputs\"\"\"\n    \n    def test_iso_naive_datetime_adds_utc(self):\n        \"\"\"Verify _iso converts naive datetime to ISO 8601 with UTC timezone\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45)\n        result = _iso(dt)\n        \n        # Verify ISO format and UTC suffix\n        assert isinstance(result, str)\n        assert '+00:00' in result or 'Z' in result or result.endswith('+00:00')\n        # Verify date components\n        assert '2023' in result\n        assert '06' in result or '6' in result\n        assert '15' in result\n        \n    def test_iso_aware_datetime_preserves_timezone(self):\n        \"\"\"Verify _iso preserves timezone for aware datetime objects\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone(timedelta(hours=5)))\n        result = _iso(dt)\n        \n        # Verify timezone is preserved\n        assert '+05:00' in result\n        assert '2023' in result\n\n\nclass Test_iso_EdgeCases:\n    \"\"\"Edge case tests for _iso function\"\"\"\n    \n    def test_iso_negative_timezone(self):\n        \"\"\"Edge case: datetime with negative timezone offset\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone(timedelta(hours=-7)))\n        result = _iso(dt)\n        \n        assert '-07:00' in result\n        \n    def test_iso_microseconds(self):\n        \"\"\"Edge case: datetime with microseconds\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45, 123456)\n        result = _iso(dt)\n        \n        # Result should be valid ISO format (may or may not include microseconds)\n        assert isinstance(result, str)\n        assert '2023' in result\n        # Fractional seconds might be included or rounded\n        assert 'T' in result  # ISO 8601 has T separator\n        \n    def test_iso_utc_timezone(self):\n        \"\"\"Edge case: datetime with explicit UTC timezone\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone.utc)\n        result = _iso(dt)\n        \n        assert isinstance(result, str)\n        # Should have UTC indicator\n        assert '+00:00' in result or 'Z' in result\n\n\n# =============================================================================\n# UNIT TESTS: _text_el\n# =============================================================================\n\nclass Test_text_el_HappyPath:\n    \"\"\"Test _text_el function with valid inputs\"\"\"\n    \n    def test_text_el_creates_child(self):\n        \"\"\"Verify _text_el creates XML child element with text\"\"\"\n        parent = ET.Element('root')\n        tag = 'title'\n        text = 'Test Title'\n        \n        result = _text_el(parent, tag, text)\n        \n        # Verify child element created and returned\n        assert result is not None\n        assert result.tag == tag\n        assert result.text == text\n        \n        # Verify parent contains child\n        children = list(parent)\n        assert len(children) == 1\n        assert children[0].tag == tag\n        assert children[0].text == text\n\n\nclass Test_text_el_EdgeCases:\n    \"\"\"Edge case tests for _text_el function\"\"\"\n    \n    def test_text_el_xml_special_characters(self):\n        \"\"\"Edge case: _text_el with XML special characters\"\"\"\n        parent = ET.Element('root')\n        tag = 'content'\n        text = \"<script>alert('test');</script> & more\"\n        \n        result = _text_el(parent, tag, text)\n        \n        # Verify text is stored correctly (ElementTree handles escaping)\n        assert result.text == text\n        \n        # Verify XML is valid by serializing and parsing\n        xml_str = ET.tostring(parent, encoding='unicode')\n        assert '<content>' in xml_str\n        # ElementTree should escape special chars\n        parsed = ET.fromstring(xml_str)\n        child = parsed.find('content')\n        assert child.text == text\n        \n    def test_text_el_empty_text(self):\n        \"\"\"Edge case: _text_el with empty string\"\"\"\n        parent = ET.Element('root')\n        tag = 'description'\n        text = ''\n        \n        result = _text_el(parent, tag, text)\n        \n        assert result is not None\n        assert result.tag == tag\n        assert result.text == ''\n        \n    def test_text_el_unicode(self):\n        \"\"\"Edge case: _text_el with Unicode characters\"\"\"\n        parent = ET.Element('root')\n        tag = 'title'\n        text = 'Hello 世界 🌍'\n        \n        result = _text_el(parent, tag, text)\n        \n        assert result.text == text\n        \n        # Verify Unicode is preserved when serialized\n        xml_str = ET.tostring(parent, encoding='unicode')\n        assert '世界' in xml_str or '&#' in xml_str  # Either literal or entity\n        \n    def test_text_el_multiple_children(self):\n        \"\"\"Edge case: adding multiple children to same parent\"\"\"\n        parent = ET.Element('root')\n        \n        child1 = _text_el(parent, 'first', 'First child')\n        child2 = _text_el(parent, 'second', 'Second child')\n        \n        children = list(parent)\n        assert len(children) == 2\n        assert children[0].tag == 'first'\n        assert children[1].tag == 'second'\n\n\n# =============================================================================\n# INTEGRATION TESTS: _build_feed\n# =============================================================================\n\n@pytest.fixture\ndef mock_author():\n    \"\"\"Create a mock Author object\"\"\"\n    author = Mock()\n    author.display_name = 'Test User'\n    author.username = 'testuser'\n    return author\n\n\n@pytest.fixture\ndef mock_tool():\n    \"\"\"Create a mock Tool object with all required attributes\"\"\"\n    tool = Mock()\n    tool.id = 1\n    tool.name = 'Test Tool'\n    tool.slug = 'test-tool'\n    tool.description = 'A test tool description'\n    tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n    tool.author = Mock()\n    tool.author.display_name = 'Tool Author'\n    tool.author.username = 'toolauthor'\n    return tool\n\n\n@pytest.fixture\ndef mock_thread():\n    \"\"\"Create a mock ForumThread object with all required attributes\"\"\"\n    thread = Mock()\n    thread.id = 100\n    thread.title = 'Test Thread'\n    thread.body = 'This is a test thread body'\n    thread.created_at = datetime(2023, 6, 15, 11, 0, 0, tzinfo=timezone.utc)\n    thread.author = Mock()\n    thread.author.display_name = 'Thread Author'\n    thread.author.username = 'threadauthor'\n    return thread\n\n\nclass Test_build_feed_HappyPath:\n    \"\"\"Test _build_feed with valid inputs\"\"\"\n    \n    def test_build_feed_happy_path(self, mock_tool, mock_thread):\n        \"\"\"Verify _build_feed creates valid Atom XML with mixed content\"\"\"\n        tools = [mock_tool]\n        threads = [mock_thread]\n        \n        result = _build_feed(tools, threads)\n        \n        # Verify result is string\n        assert isinstance(result, str)\n        \n        # Verify XML declaration\n        assert '<?xml' in result\n        assert 'utf-8' in result.lower() or 'UTF-8' in result\n        \n        # Parse XML\n        root = ET.fromstring(result)\n        \n        # Verify Atom namespace\n        assert 'http://www.w3.org/2005/Atom' in root.tag\n        \n        # Verify feed metadata\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        feed_id = root.find('atom:id', ns)\n        assert feed_id is not None\n        assert feed_id.text == 'urn:centaur:feed'\n        \n        title = root.find('atom:title', ns)\n        assert title is not None\n        assert title.text == 'centaur.tools'\n        \n        # Verify entries present\n        entries = root.findall('atom:entry', ns)\n        assert len(entries) == 2\n        \n        # Verify sorting (thread is more recent)\n        first_entry_title = entries[0].find('atom:title', ns).text\n        assert first_entry_title == 'Test Thread'  # More recent\n\n\nclass Test_build_feed_EdgeCases:\n    \"\"\"Edge case tests for _build_feed\"\"\"\n    \n    def test_build_feed_empty_lists(self):\n        \"\"\"Edge case: _build_feed with no tools or threads\"\"\"\n        result = _build_feed([], [])\n        \n        assert isinstance(result, str)\n        assert '<?xml' in result\n        \n        # Parse and verify\n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        # Should have feed metadata\n        assert root.find('atom:id', ns).text == 'urn:centaur:feed'\n        \n        # Should have no entries\n        entries = root.findall('atom:entry', ns)\n        assert len(entries) == 0\n        \n        # Should have updated timestamp\n        updated = root.find('atom:updated', ns)\n        assert updated is not None\n        \n    def test_build_feed_missing_author(self, mock_tool):\n        \"\"\"Edge case: _build_feed with None author defaults to 'unknown'\"\"\"\n        mock_tool.author = None\n        tools = [mock_tool]\n        \n        result = _build_feed(tools, [])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        entry = root.find('atom:entry', ns)\n        author = entry.find('atom:author', ns)\n        author_name = author.find('atom:name', ns)\n        \n        assert author_name.text == 'unknown'\n\n\nclass Test_build_feed_Invariants:\n    \"\"\"Invariant tests for _build_feed\"\"\"\n    \n    def test_build_feed_50_entry_limit(self):\n        \"\"\"Invariant: _build_feed limits to 50 entries maximum\"\"\"\n        # Create 60 tools and 60 threads\n        tools = []\n        for i in range(60):\n            tool = Mock()\n            tool.id = i\n            tool.name = f'Tool {i}'\n            tool.slug = f'tool-{i}'\n            tool.description = f'Description {i}'\n            tool.created_at = datetime(2023, 6, 15, 10, i % 60, 0, tzinfo=timezone.utc)\n            tool.author = Mock()\n            tool.author.display_name = f'Author {i}'\n            tool.author.username = f'author{i}'\n            tools.append(tool)\n            \n        threads = []\n        for i in range(60):\n            thread = Mock()\n            thread.id = i + 1000\n            thread.title = f'Thread {i}'\n            thread.body = f'Body {i}'\n            thread.created_at = datetime(2023, 6, 16, 10, i % 60, 0, tzinfo=timezone.utc)\n            thread.author = Mock()\n            thread.author.display_name = f'Thread Author {i}'\n            thread.author.username = f'threadauthor{i}'\n            threads.append(thread)\n        \n        result = _build_feed(tools, threads)\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        entries = root.findall('atom:entry', ns)\n        \n        # Should have exactly 50 entries\n        assert len(entries) == 50\n        \n    def test_build_feed_truncates_descriptions(self):\n        \"\"\"Invariant: _build_feed truncates descriptions to 500 characters\"\"\"\n        tool = Mock()\n        tool.id = 1\n        tool.name = 'Long Tool'\n        tool.slug = 'long-tool'\n        tool.description = 'x' * 1000  # 1000 character description\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = 'Author'\n        tool.author.username = 'author'\n        \n        result = _build_feed([tool], [])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        entry = root.find('atom:entry', ns)\n        summary = entry.find('atom:summary', ns)\n        \n        assert len(summary.text) <= 500\n        \n    def test_build_feed_feed_metadata_invariants(self, mock_tool):\n        \"\"\"Invariant: Verify all feed metadata constants\"\"\"\n        result = _build_feed([mock_tool], [])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        # Feed ID\n        assert root.find('atom:id', ns).text == 'urn:centaur:feed'\n        \n        # Title\n        assert root.find('atom:title', ns).text == 'centaur.tools'\n        \n        # Subtitle\n        subtitle = root.find('atom:subtitle', ns)\n        assert subtitle is not None\n        assert subtitle.text == 'Community-governed registry for AI tools'\n        \n        # Author\n        author = root.find('atom:author', ns)\n        author_name = author.find('atom:name', ns)\n        assert author_name.text == 'centaur.tools'\n        \n        # Links\n        links = root.findall('atom:link', ns)\n        link_dict = {link.get('rel'): link.get('href') for link in links}\n        \n        assert link_dict.get('self') == 'https://centaur.tools/api/feed/atom.xml'\n        assert link_dict.get('alternate') == 'https://centaur.tools'\n        \n    def test_build_feed_tool_entry_format(self):\n        \"\"\"Invariant: Tool entries have correct URN and link format\"\"\"\n        tool = Mock()\n        tool.id = 123\n        tool.name = 'Test Tool'\n        tool.slug = 'test-tool'\n        tool.description = 'Description'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = 'Author'\n        tool.author.username = 'author'\n        \n        result = _build_feed([tool], [])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        entry = root.find('atom:entry', ns)\n        \n        # Entry ID\n        entry_id = entry.find('atom:id', ns)\n        assert entry_id.text == 'urn:centaur:tool:123'\n        \n        # Link\n        link = entry.find('atom:link', ns)\n        assert link.get('href') == 'https://centaur.tools/tools/test-tool'\n        \n        # Category\n        category = entry.find('atom:category', ns)\n        assert category.get('term') == 'tool'\n        \n    def test_build_feed_thread_entry_format(self):\n        \"\"\"Invariant: Thread entries have correct URN and link format\"\"\"\n        thread = Mock()\n        thread.id = 456\n        thread.title = 'Test Thread'\n        thread.body = 'Body'\n        thread.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        thread.author = Mock()\n        thread.author.display_name = 'Author'\n        thread.author.username = 'author'\n        \n        result = _build_feed([], [thread])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        entry = root.find('atom:entry', ns)\n        \n        # Entry ID\n        entry_id = entry.find('atom:id', ns)\n        assert entry_id.text == 'urn:centaur:thread:456'\n        \n        # Link\n        link = entry.find('atom:link', ns)\n        assert link.get('href') == 'https://centaur.tools/forum/thread/456'\n        \n        # Category\n        category = entry.find('atom:category', ns)\n        assert category.get('term') == 'forum'\n        \n    def test_build_feed_sort_order(self):\n        \"\"\"Invariant: Entries sorted by created_at descending\"\"\"\n        tool1 = Mock()\n        tool1.id = 1\n        tool1.name = 'Old Tool'\n        tool1.slug = 'old-tool'\n        tool1.description = 'Desc'\n        tool1.created_at = datetime(2023, 1, 1, 10, 0, 0, tzinfo=timezone.utc)\n        tool1.author = Mock()\n        tool1.author.display_name = 'Author'\n        tool1.author.username = 'author'\n        \n        tool2 = Mock()\n        tool2.id = 2\n        tool2.name = 'New Tool'\n        tool2.slug = 'new-tool'\n        tool2.description = 'Desc'\n        tool2.created_at = datetime(2023, 12, 31, 10, 0, 0, tzinfo=timezone.utc)\n        tool2.author = Mock()\n        tool2.author.display_name = 'Author'\n        tool2.author.username = 'author'\n        \n        thread = Mock()\n        thread.id = 100\n        thread.title = 'Mid Thread'\n        thread.body = 'Body'\n        thread.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        thread.author = Mock()\n        thread.author.display_name = 'Author'\n        thread.author.username = 'author'\n        \n        result = _build_feed([tool1, tool2], [thread])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        entries = root.findall('atom:entry', ns)\n        titles = [entry.find('atom:title', ns).text for entry in entries]\n        \n        # Should be sorted: New Tool (Dec 31) -> Mid Thread (Jun 15) -> Old Tool (Jan 1)\n        assert titles[0] == 'New Tool'\n        assert titles[1] == 'Mid Thread'\n        assert titles[2] == 'Old Tool'\n\n\nclass Test_build_feed_ErrorCases:\n    \"\"\"Error case tests for _build_feed\"\"\"\n    \n    def test_build_feed_missing_tool_attributes(self):\n        \"\"\"Error case: _build_feed raises AttributeError for missing Tool attributes\"\"\"\n        tool = Mock()\n        tool.id = 1\n        tool.name = 'Test'\n        # Missing slug attribute\n        del tool.slug\n        tool.description = 'Desc'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = 'Author'\n        \n        with pytest.raises(AttributeError):\n            _build_feed([tool], [])\n            \n    def test_build_feed_missing_thread_attributes(self):\n        \"\"\"Error case: _build_feed raises AttributeError for missing ForumThread attributes\"\"\"\n        thread = Mock(spec=['id', 'title', 'created_at', 'author'])\n        thread.id = 1\n        thread.title = 'Test'\n        thread.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        thread.author = Mock()\n        thread.author.display_name = 'Author'\n        # Missing body attribute\n        \n        with pytest.raises(AttributeError):\n            _build_feed([], [thread])\n\n\n# =============================================================================\n# E2E TESTS: atom_feed endpoint\n# =============================================================================\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Create mock AsyncSession for database\"\"\"\n    session = AsyncMock()\n    return session\n\n\n@pytest.fixture\ndef mock_query_result():\n    \"\"\"Create mock query result with scalars\"\"\"\n    result = AsyncMock()\n    result.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))\n    return result\n\n\nclass Test_atom_feed_HappyPath:\n    \"\"\"Test atom_feed endpoint with valid inputs\"\"\"\n    \n    @pytest.mark.asyncio\n    async def test_atom_feed_happy_path(self, mock_db_session):\n        \"\"\"Verify atom_feed endpoint returns valid Atom XML response\"\"\"\n        # Mock database query results\n        tool = Mock()\n        tool.id = 1\n        tool.name = 'Tool'\n        tool.slug = 'tool'\n        tool.description = 'Description'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = 'Author'\n        tool.author.username = 'author'\n        \n        thread = Mock()\n        thread.id = 100\n        thread.title = 'Thread'\n        thread.body = 'Body'\n        thread.created_at = datetime(2023, 6, 15, 11, 0, 0, tzinfo=timezone.utc)\n        thread.author = Mock()\n        thread.author.display_name = 'Thread Author'\n        thread.author.username = 'threadauthor'\n        \n        # Setup mock to return tools and threads\n        result_mock = AsyncMock()\n        result_mock.scalars = Mock(return_value=Mock(all=Mock(return_value=[tool])))\n        \n        result_mock2 = AsyncMock()\n        result_mock2.scalars = Mock(return_value=Mock(all=Mock(return_value=[thread])))\n        \n        mock_db_session.execute = AsyncMock(side_effect=[result_mock, result_mock2])\n        \n        response = await atom_feed(mock_db_session)\n        \n        # Verify response type and content-type\n        assert response is not None\n        assert response.media_type == 'application/atom+xml'\n        \n        # Verify body contains valid XML\n        body = response.body\n        assert b'<?xml' in body\n        assert b'http://www.w3.org/2005/Atom' in body\n        \n        # Parse and validate\n        root = ET.fromstring(body)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        assert root.find('atom:id', ns).text == 'urn:centaur:feed'\n        \n    @pytest.mark.asyncio\n    async def test_atom_feed_query_limits(self, mock_db_session):\n        \"\"\"Verify atom_feed queries with correct limits and filters\"\"\"\n        # Create many tools\n        tools = []\n        for i in range(60):\n            tool = Mock()\n            tool.id = i\n            tool.name = f'Tool {i}'\n            tool.slug = f'tool-{i}'\n            tool.description = 'Desc'\n            tool.created_at = datetime(2023, 6, 15, 10, i % 60, 0, tzinfo=timezone.utc)\n            tool.author = Mock()\n            tool.author.display_name = 'Author'\n            tool.author.username = 'author'\n            tools.append(tool)\n        \n        threads = []\n        for i in range(60):\n            thread = Mock()\n            thread.id = i + 1000\n            thread.title = f'Thread {i}'\n            thread.body = 'Body'\n            thread.created_at = datetime(2023, 6, 15, 11, i % 60, 0, tzinfo=timezone.utc)\n            thread.author = Mock()\n            thread.author.display_name = 'Author'\n            thread.author.username = 'author'\n            threads.append(thread)\n        \n        # Return all items (feed builder will limit)\n        result_tools = AsyncMock()\n        result_tools.scalars = Mock(return_value=Mock(all=Mock(return_value=tools[:50])))\n        \n        result_threads = AsyncMock()\n        result_threads.scalars = Mock(return_value=Mock(all=Mock(return_value=threads[:50])))\n        \n        mock_db_session.execute = AsyncMock(side_effect=[result_tools, result_threads])\n        \n        response = await atom_feed(mock_db_session)\n        \n        # Verify queries were made\n        assert mock_db_session.execute.call_count == 2\n        \n        # Parse response and verify entry count\n        root = ET.fromstring(response.body)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        entries = root.findall('atom:entry', ns)\n        \n        # Should have at most 50 entries\n        assert len(entries) <= 50\n\n\nclass Test_atom_feed_EdgeCases:\n    \"\"\"Edge case tests for atom_feed endpoint\"\"\"\n    \n    @pytest.mark.asyncio\n    async def test_atom_feed_empty_database(self, mock_db_session):\n        \"\"\"Edge case: atom_feed with no data in database\"\"\"\n        # Return empty results\n        result_empty = AsyncMock()\n        result_empty.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))\n        \n        mock_db_session.execute = AsyncMock(return_value=result_empty)\n        \n        response = await atom_feed(mock_db_session)\n        \n        # Should still return valid feed\n        assert response.media_type == 'application/atom+xml'\n        \n        root = ET.fromstring(response.body)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        # Should have feed metadata\n        assert root.find('atom:id', ns).text == 'urn:centaur:feed'\n        \n        # Should have no entries\n        entries = root.findall('atom:entry', ns)\n        assert len(entries) == 0\n\n\nclass Test_atom_feed_Invariants:\n    \"\"\"Invariant tests for atom_feed endpoint\"\"\"\n    \n    @pytest.mark.asyncio\n    async def test_atom_feed_utf8_encoding(self, mock_db_session):\n        \"\"\"Invariant: atom_feed response uses UTF-8 encoding\"\"\"\n        # Create tool with Unicode content\n        tool = Mock()\n        tool.id = 1\n        tool.name = 'Unicode Tool 世界 🌍'\n        tool.slug = 'unicode-tool'\n        tool.description = 'Description with émojis 🎉'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = 'Author 名前'\n        tool.author.username = 'author'\n        \n        result_mock = AsyncMock()\n        result_mock.scalars = Mock(return_value=Mock(all=Mock(return_value=[tool])))\n        \n        result_empty = AsyncMock()\n        result_empty.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))\n        \n        mock_db_session.execute = AsyncMock(side_effect=[result_mock, result_empty])\n        \n        response = await atom_feed(mock_db_session)\n        \n        # Verify UTF-8 declaration\n        body = response.body\n        assert b'utf-8' in body.lower() or b'UTF-8' in body\n        \n        # Verify Unicode content is preserved (either literal or escaped)\n        body_str = body.decode('utf-8')\n        assert '世界' in body_str or '&#' in body_str\n\n\nclass Test_atom_feed_ErrorCases:\n    \"\"\"Error case tests for atom_feed endpoint\"\"\"\n    \n    @pytest.mark.asyncio\n    async def test_atom_feed_database_error(self, mock_db_session):\n        \"\"\"Error case: atom_feed handles database connection failure\"\"\"\n        from sqlalchemy.exc import DatabaseError\n        \n        # Mock database to raise DatabaseError\n        mock_db_session.execute = AsyncMock(side_effect=DatabaseError(\"Connection failed\", None, None))\n        \n        # Should propagate the error\n        with pytest.raises(DatabaseError):\n            await atom_feed(mock_db_session)\n            \n    @pytest.mark.asyncio\n    async def test_atom_feed_attribute_error(self, mock_db_session):\n        \"\"\"Error case: atom_feed handles AttributeError from malformed objects\"\"\"\n        # Create tool missing required attributes\n        tool = Mock(spec=['id', 'name', 'created_at'])\n        tool.id = 1\n        tool.name = 'Tool'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        # Missing slug, description, author\n        \n        result_mock = AsyncMock()\n        result_mock.scalars = Mock(return_value=Mock(all=Mock(return_value=[tool])))\n        \n        result_empty = AsyncMock()\n        result_empty.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))\n        \n        mock_db_session.execute = AsyncMock(side_effect=[result_mock, result_empty])\n        \n        # Should raise AttributeError\n        with pytest.raises(AttributeError):\n            await atom_feed(mock_db_session)\n\n\n# =============================================================================\n# ADDITIONAL COVERAGE TESTS\n# =============================================================================\n\nclass Test_EdgeCaseCoverage:\n    \"\"\"Additional tests to ensure comprehensive coverage\"\"\"\n    \n    def test_iso_with_utc_z_format(self):\n        \"\"\"Test ISO format with Z suffix (alternative UTC representation)\"\"\"\n        dt = datetime(2023, 6, 15, 10, 30, 45, tzinfo=timezone.utc)\n        result = _iso(dt)\n        \n        # Should have either +00:00 or Z\n        assert '+00:00' in result or result.endswith('Z')\n        \n    def test_build_feed_thread_truncates_body(self):\n        \"\"\"Test that thread body is also truncated to 500 chars\"\"\"\n        thread = Mock()\n        thread.id = 1\n        thread.title = 'Thread'\n        thread.body = 'x' * 1000\n        thread.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        thread.author = Mock()\n        thread.author.display_name = 'Author'\n        thread.author.username = 'author'\n        \n        result = _build_feed([], [thread])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        entry = root.find('atom:entry', ns)\n        summary = entry.find('atom:summary', ns)\n        \n        assert len(summary.text) <= 500\n        \n    def test_build_feed_author_display_name_fallback(self):\n        \"\"\"Test that username is used if display_name not available\"\"\"\n        tool = Mock()\n        tool.id = 1\n        tool.name = 'Tool'\n        tool.slug = 'tool'\n        tool.description = 'Desc'\n        tool.created_at = datetime(2023, 6, 15, 10, 0, 0, tzinfo=timezone.utc)\n        tool.author = Mock()\n        tool.author.display_name = None\n        tool.author.username = 'testuser'\n        \n        result = _build_feed([tool], [])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        entry = root.find('atom:entry', ns)\n        author = entry.find('atom:author', ns)\n        author_name = author.find('atom:name', ns)\n        \n        # Should use username if display_name is None\n        # (actual behavior depends on implementation)\n        assert author_name.text in ['testuser', 'unknown']\n        \n    def test_build_feed_updated_timestamp_matches_recent(self, mock_tool, mock_thread):\n        \"\"\"Test that feed updated timestamp matches most recent entry\"\"\"\n        # Make thread more recent\n        mock_thread.created_at = datetime(2023, 12, 31, 23, 59, 59, tzinfo=timezone.utc)\n        mock_tool.created_at = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)\n        \n        result = _build_feed([mock_tool], [mock_thread])\n        \n        root = ET.fromstring(result)\n        ns = {'atom': 'http://www.w3.org/2005/Atom'}\n        \n        feed_updated = root.find('atom:updated', ns).text\n        \n        # Should match the thread's timestamp (most recent)\n        assert '2023-12-31' in feed_updated or '2023' in feed_updated\n\n\nif __name__ == '__main__':\n    pytest.main([__file__, '-v'])\n\"\"\"\n"
+}

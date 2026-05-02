@@ -1,0 +1,198 @@
+{
+  "component_id": "backend_api_auth_dependencies",
+  "name": "Auth Dependencies",
+  "description": "FastAPI dependency injection functions for authentication. Provides get_current_user (strict, raises HTTPException on failure) and get_optional_user (permissive, returns None on failure). Both extract and validate JWT session cookies, decode user_id from JWT payload, and query the database for the User record.",
+  "version": 1,
+  "types": [
+    {
+      "name": "User",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "SQLAlchemy User model from backend.api.models (external type)",
+      "owner_component": "backend.api.models"
+    },
+    {
+      "name": "AsyncSession",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "SQLAlchemy async database session (external type)",
+      "owner_component": "sqlalchemy.ext.asyncio"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_current_user",
+      "description": "Strict authentication dependency that requires a valid session cookie. Decodes JWT from 'session' cookie, extracts user_id from 'sub' claim, queries database for User. Raises HTTPException (401) if session missing, invalid, or user not found. Used as FastAPI dependency via Depends().",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by FastAPI Depends(get_db)",
+          "validators": []
+        },
+        {
+          "name": "session",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "JWT session token from Cookie header, defaults to None if not present",
+          "validators": []
+        }
+      ],
+      "output_type": "User",
+      "error_cases": [
+        {
+          "name": "missing_session",
+          "condition": "session cookie is None",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Not authenticated"
+          }
+        },
+        {
+          "name": "invalid_session",
+          "condition": "decode_jwt() raises exception OR uuid.UUID() raises exception",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Invalid session"
+          }
+        },
+        {
+          "name": "user_not_found",
+          "condition": "Database query returns None (no user with matching id)",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "User not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "session cookie must be present (not None)",
+        "session must be a valid JWT decodable by decode_jwt()",
+        "JWT payload must contain 'sub' field with valid UUID string",
+        "User with id matching JWT 'sub' must exist in database"
+      ],
+      "postconditions": [
+        "Returns User object from database matching JWT user_id",
+        "User.id equals uuid.UUID(payload['sub'])"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Reads from database (SELECT query on User table)"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "database",
+          "description": "Executes SELECT query: select(User).where(User.id == user_id)"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_optional_user",
+      "description": "Permissive authentication dependency that allows anonymous access. Attempts to decode JWT from 'session' cookie and fetch User from database. Returns None on any failure (missing cookie, invalid JWT, invalid UUID, user not found). Never raises exceptions. Used as FastAPI dependency for endpoints that support optional authentication.",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by FastAPI Depends(get_db)",
+          "validators": []
+        },
+        {
+          "name": "session",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "JWT session token from Cookie header, defaults to None if not present",
+          "validators": []
+        }
+      ],
+      "output_type": "User | None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns User object if session is valid and user exists in database",
+        "Returns None if session is missing, invalid, or user not found",
+        "Never raises exceptions"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Reads from database (SELECT query on User table) if session is present"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "database",
+          "description": "Conditionally executes SELECT query: select(User).where(User.id == user_id) if session cookie present and decodable"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "uuid",
+    "fastapi",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "backend.api.database",
+    "backend.api.models",
+    "backend.api.auth.router"
+  ],
+  "dependency_contracts": {
+    "backend.api.database": [
+      "get_db"
+    ],
+    "backend.api.models": [
+      "User"
+    ],
+    "backend.api.auth.router": [
+      "decode_jwt"
+    ]
+  },
+  "invariants": [
+    "get_current_user always returns a User or raises HTTPException (never returns None)",
+    "get_optional_user always returns User or None (never raises exceptions)",
+    "Both functions extract user_id from JWT 'sub' claim as UUID",
+    "Database queries use User.id field for lookup",
+    "Session token is expected as HTTP cookie named 'session'"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "User table"
+    ],
+    "writes": [],
+    "rationale": "Both functions query the User table to fetch user records by id. No write operations performed.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "User authentication data",
+        "fields": [
+          "User.id"
+        ],
+        "rationale": "Queries User table by id to authenticate session tokens"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": "This module does not own data domains; it only reads User data for authentication purposes. Authority over User domain belongs to backend.api.models or user management modules."
+  }
+}

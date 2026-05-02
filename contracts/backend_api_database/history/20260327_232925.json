@@ -1,0 +1,107 @@
+{
+  "component_id": "backend_api_database",
+  "name": "Database Session Provider",
+  "description": "Provides asynchronous database session management using SQLAlchemy async engine. Configures a global async engine and sessionmaker, and exposes an async generator function for dependency injection of database sessions.",
+  "version": 1,
+  "types": [
+    {
+      "name": "AsyncSession",
+      "kind": "primitive",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "SQLAlchemy AsyncSession type for async database operations",
+      "owner_component": "sqlalchemy.ext.asyncio"
+    }
+  ],
+  "functions": [
+    {
+      "name": "get_db",
+      "description": "Async generator that yields a SQLAlchemy AsyncSession for database operations. Intended for use as a FastAPI dependency. The session is automatically closed when the context exits.",
+      "inputs": [],
+      "output_type": "AsyncGenerator[AsyncSession, None]",
+      "error_cases": [
+        {
+          "name": "DatabaseConnectionError",
+          "condition": "If database_url is invalid or database is unreachable",
+          "error_type": "sqlalchemy.exc.OperationalError",
+          "error_data": {}
+        },
+        {
+          "name": "SessionCreationError",
+          "condition": "If async_session() fails to create a session",
+          "error_type": "sqlalchemy.exc.SQLAlchemyError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.database_url must be configured and valid",
+        "async_session factory must be initialized"
+      ],
+      "postconditions": [
+        "Yields an active AsyncSession",
+        "Session is automatically closed after yield completes",
+        "Session does not expire objects on commit (expire_on_commit=False)"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Opens a database connection",
+        "Closes database connection on context exit"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database connection pool",
+          "description": "Acquires and releases connection from pool"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "sqlalchemy.ext.asyncio",
+    "backend.api.config"
+  ],
+  "dependency_contracts": {
+    "sqlalchemy.ext.asyncio": [
+      "AsyncSession",
+      "async_sessionmaker",
+      "create_async_engine"
+    ],
+    "backend.api.config": [
+      "settings.database_url"
+    ]
+  },
+  "invariants": [
+    "engine is created once at module load with echo=False",
+    "async_session factory uses expire_on_commit=False",
+    "All sessions share the same engine instance"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "database"
+    ],
+    "writes": [
+      "database"
+    ],
+    "rationale": "Provides session factory for all database read/write operations. Acts as the primary database access layer for the application.",
+    "side_effects": [
+      {
+        "type": "database_connection",
+        "classification": "connection_pooling",
+        "fields": [],
+        "rationale": "Manages connection pool lifecycle through SQLAlchemy async engine"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "database_session_management"
+    ],
+    "rationale": "Owns the configuration and lifecycle of database sessions for the entire backend.api layer"
+  }
+}

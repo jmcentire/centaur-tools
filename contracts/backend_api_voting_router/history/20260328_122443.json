@@ -1,0 +1,353 @@
+{
+  "component_id": "backend_api_voting_router",
+  "name": "Voting Router",
+  "description": "FastAPI router providing voting endpoints for tools. Allows authenticated users to vote for tools and remove their votes. Enforces one vote per user per tool and only allows voting on active tools.",
+  "version": 1,
+  "types": [
+    {
+      "name": "VoteResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'voted' for successful vote",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Total number of votes for the tool after this vote",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response returned when a vote is successfully cast",
+      "owner_component": ""
+    },
+    {
+      "name": "AlreadyVotedResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'already_voted'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response when user has already voted for this tool",
+      "owner_component": ""
+    },
+    {
+      "name": "RemovedVoteResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'removed'",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Total number of votes for the tool after removal",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response when vote is successfully removed",
+      "owner_component": ""
+    },
+    {
+      "name": "NotVotedResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'not_voted'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response when user attempts to remove a non-existent vote",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "vote_useful",
+      "description": "Allows an authenticated user to cast a vote for a tool by slug. Creates a ToolVote record if the user has not already voted. Returns vote status and updated vote count.",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool slug identifier from URL path parameter",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, str | int]",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with given slug does not exist OR tool.is_active == False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated (enforced by get_current_user dependency)",
+        "Database session must be active"
+      ],
+      "postconditions": [
+        "If tool exists and user has not voted: ToolVote record created and committed to database",
+        "If tool exists and user has not voted: Returns {'status': 'voted', 'vote_count': <count>}",
+        "If user has already voted: Returns {'status': 'already_voted'} without modifying database",
+        "Vote count reflects the current total votes for the tool"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Executes database SELECT query to find Tool by slug and is_active=True",
+        "Executes database SELECT query to check for existing ToolVote",
+        "If vote is new: Creates and inserts ToolVote record into database",
+        "If vote is new: Commits database transaction",
+        "Executes database COUNT query to retrieve total vote count"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "database",
+          "description": "Multiple async database queries and potential write"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "ToolVote table",
+          "description": "Creates new ToolVote record when user has not previously voted"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "remove_vote",
+      "description": "Allows an authenticated user to remove their vote for a tool by slug. Deletes the ToolVote record if it exists. Returns removal status and updated vote count.",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool slug identifier from URL path parameter",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, str | int]",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with given slug does not exist OR tool.is_active == False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated (enforced by get_current_user dependency)",
+        "Database session must be active"
+      ],
+      "postconditions": [
+        "If tool exists and user has voted: ToolVote record deleted and committed to database",
+        "If tool exists and user has voted: Returns {'status': 'removed', 'vote_count': <count>}",
+        "If user has not voted: Returns {'status': 'not_voted'} without modifying database",
+        "Vote count reflects the current total votes for the tool after removal"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Executes database SELECT query to find Tool by slug and is_active=True",
+        "Executes database SELECT query to find existing ToolVote",
+        "If vote exists: Deletes ToolVote record from database",
+        "If vote exists: Commits database transaction",
+        "Executes database COUNT query to retrieve total vote count"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "database",
+          "description": "Multiple async database queries and potential delete"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "ToolVote table",
+          "description": "Deletes ToolVote record when user has previously voted"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "backend.auth.dependencies",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.auth.dependencies": [
+      "get_current_user"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "Tool",
+      "ToolVote",
+      "User"
+    ],
+    "fastapi": [
+      "APIRouter",
+      "Depends",
+      "HTTPException"
+    ],
+    "sqlalchemy": [
+      "func",
+      "select"
+    ],
+    "sqlalchemy.ext.asyncio": [
+      "AsyncSession"
+    ]
+  },
+  "invariants": [
+    "Router is mounted at /api/tools prefix with 'voting' tag",
+    "All endpoints require authenticated user (via get_current_user dependency)",
+    "Only active tools (is_active=True) can be voted on or have votes removed",
+    "Each user can have at most one vote per tool (enforced by business logic, not database constraint in this code)",
+    "Vote count queries are executed after write operations to ensure consistency"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "Tool table",
+      "ToolVote table"
+    ],
+    "writes": [
+      "ToolVote table"
+    ],
+    "rationale": "Reads Tool records to validate tool exists and is active. Reads and writes ToolVote records to manage user voting state.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "Tool lookup",
+        "fields": [
+          "slug",
+          "is_active",
+          "id"
+        ],
+        "rationale": "Required to validate tool existence and active status before allowing vote operations"
+      },
+      {
+        "type": "database_read",
+        "classification": "Vote existence check",
+        "fields": [
+          "tool_id",
+          "user_id"
+        ],
+        "rationale": "Prevents duplicate votes by checking for existing vote before creation"
+      },
+      {
+        "type": "database_write",
+        "classification": "Vote creation",
+        "fields": [
+          "tool_id",
+          "user_id"
+        ],
+        "rationale": "Records user vote in ToolVote table"
+      },
+      {
+        "type": "database_delete",
+        "classification": "Vote removal",
+        "fields": [
+          "tool_id",
+          "user_id"
+        ],
+        "rationale": "Removes user vote from ToolVote table"
+      },
+      {
+        "type": "database_read",
+        "classification": "Vote count aggregation",
+        "fields": [
+          "tool_id"
+        ],
+        "rationale": "Returns current vote count to client after mutation"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

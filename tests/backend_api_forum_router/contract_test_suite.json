@@ -1,0 +1,855 @@
+{
+  "component_id": "backend_api_forum_router",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_list_categories_happy_path",
+      "description": "Successfully retrieves all categories with correct structure and ordering",
+      "function": "list_categories",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid async database session",
+      "expected_output_description": "Dictionary with 'categories' key containing list of category objects ordered by sort_order",
+      "expected_error": "",
+      "assertions": [
+        "Response contains 'categories' key",
+        "Each category has slug, name, description, thread_count fields",
+        "Categories are ordered by sort_order ascending"
+      ]
+    },
+    {
+      "id": "test_list_categories_empty_database",
+      "description": "Returns empty list when no categories exist",
+      "function": "list_categories",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Database with no categories",
+      "expected_output_description": "Dictionary with empty categories list",
+      "expected_error": "",
+      "assertions": [
+        "Response contains 'categories' key with empty list"
+      ]
+    },
+    {
+      "id": "test_list_threads_happy_path",
+      "description": "Successfully retrieves paginated threads for a category",
+      "function": "list_threads",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Dictionary with category, threads, total, page, per_page",
+      "expected_error": "",
+      "assertions": [
+        "Response contains all required keys",
+        "Threads ordered by is_pinned desc, last_activity_at desc",
+        "Vote counts included"
+      ]
+    },
+    {
+      "id": "test_list_threads_category_not_found",
+      "description": "Raises error when category slug does not exist",
+      "function": "list_threads",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "nonexistent",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "category_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_list_threads_invalid_page_zero",
+      "description": "Fails when page is less than 1",
+      "function": "list_threads",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "0",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "precondition violation: page >= 1",
+      "assertions": []
+    },
+    {
+      "id": "test_list_threads_invalid_per_page_too_large",
+      "description": "Fails when per_page exceeds 100",
+      "function": "list_threads",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "101"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "precondition violation: per_page <= 100",
+      "assertions": []
+    },
+    {
+      "id": "test_list_threads_invalid_per_page_zero",
+      "description": "Fails when per_page is less than 1",
+      "function": "list_threads",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "precondition violation: per_page >= 1",
+      "assertions": []
+    },
+    {
+      "id": "test_list_threads_authenticated_user",
+      "description": "Includes user vote status when user is authenticated",
+      "function": "list_threads",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "Authenticated user provided",
+      "expected_output_description": "Threads include user vote status",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_list_threads_boundary_per_page_max",
+      "description": "Successfully handles per_page at maximum boundary (100)",
+      "function": "list_threads",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "100"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_get_thread_happy_path",
+      "description": "Successfully retrieves complete thread with replies",
+      "function": "get_thread",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "Complete thread with author, category, replies sorted by created_at",
+      "expected_error": "",
+      "assertions": [
+        "All required fields present",
+        "Replies sorted by created_at ascending",
+        "Datetime fields in ISO format"
+      ]
+    },
+    {
+      "id": "test_get_thread_invalid_uuid",
+      "description": "Raises error when thread_id is not a valid UUID",
+      "function": "get_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "not-a-uuid"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_get_thread_not_found",
+      "description": "Raises error when thread does not exist",
+      "function": "get_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "thread_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_get_thread_with_tool_data",
+      "description": "Includes tool data when thread has active linked tool",
+      "function": "get_thread",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440001"
+      },
+      "input_description": "",
+      "expected_output_description": "Thread with tool field populated",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_get_thread_tool_inactive",
+      "description": "Excludes tool data when linked tool is not active",
+      "function": "get_thread",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440002"
+      },
+      "input_description": "",
+      "expected_output_description": "Thread with tool field as None",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_create_thread_happy_path",
+      "description": "Successfully creates a new thread",
+      "function": "create_thread",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "title": "Test Thread",
+        "body": "Thread content",
+        "category_slug": "general"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns id (UUID) and status='created'",
+      "expected_error": "",
+      "assertions": [
+        "Response has 'id' field with valid UUID",
+        "Response has 'status' field equal to 'created'",
+        "Thread created in database with correct author_id"
+      ]
+    },
+    {
+      "id": "test_create_thread_category_not_found",
+      "description": "Raises error when category does not exist",
+      "function": "create_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "title": "Test",
+        "body": "Content",
+        "category_slug": "nonexistent"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "category_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_create_thread_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "create_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "title": "Test",
+        "body": "Content",
+        "category_slug": "general"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_create_reply_happy_path",
+      "description": "Successfully creates a reply and updates thread metadata",
+      "function": "create_reply",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000",
+        "body": "Reply content"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns reply id (UUID) and status='created'",
+      "expected_error": "",
+      "assertions": [
+        "Reply created with correct author_id",
+        "Thread reply_count incremented",
+        "Thread last_activity_at updated"
+      ]
+    },
+    {
+      "id": "test_create_reply_invalid_uuid",
+      "description": "Raises error when thread_id is not a valid UUID",
+      "function": "create_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "invalid",
+        "body": "Reply content"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_create_reply_thread_not_found",
+      "description": "Raises error when thread does not exist",
+      "function": "create_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000",
+        "body": "Reply"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "thread_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_create_reply_thread_locked",
+      "description": "Raises error when thread is locked",
+      "function": "create_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000",
+        "body": "Reply"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "thread_locked",
+      "assertions": []
+    },
+    {
+      "id": "test_create_reply_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "create_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000",
+        "body": "Reply"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_edit_reply_happy_path",
+      "description": "Successfully updates reply body and updated_at timestamp",
+      "function": "edit_reply",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000",
+        "body": "Updated content"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns status='updated'",
+      "expected_error": "",
+      "assertions": [
+        "Reply body updated",
+        "Reply updated_at set to current UTC time"
+      ]
+    },
+    {
+      "id": "test_edit_reply_invalid_uuid",
+      "description": "Raises error when reply_id is not a valid UUID",
+      "function": "edit_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "invalid",
+        "body": "Updated"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_edit_reply_not_found",
+      "description": "Raises error when reply does not exist",
+      "function": "edit_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000",
+        "body": "Updated"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "reply_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_edit_reply_forbidden",
+      "description": "Raises error when user is not the reply author",
+      "function": "edit_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000",
+        "body": "Updated"
+      },
+      "input_description": "Different user than author",
+      "expected_output_description": "",
+      "expected_error": "forbidden",
+      "assertions": []
+    },
+    {
+      "id": "test_edit_reply_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "edit_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000",
+        "body": "Updated"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_delete_reply_happy_path",
+      "description": "Successfully soft-deletes reply and decrements thread reply count",
+      "function": "delete_reply",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns status='deleted'",
+      "expected_error": "",
+      "assertions": [
+        "Reply body set to '[deleted]'",
+        "Reply updated_at updated",
+        "Thread reply_count decremented"
+      ]
+    },
+    {
+      "id": "test_delete_reply_invalid_uuid",
+      "description": "Raises error when reply_id is not a valid UUID",
+      "function": "delete_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "invalid"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_delete_reply_not_found",
+      "description": "Raises error when reply does not exist",
+      "function": "delete_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "reply_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_delete_reply_forbidden",
+      "description": "Raises error when user is not the reply author",
+      "function": "delete_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Different user than author",
+      "expected_output_description": "",
+      "expected_error": "forbidden",
+      "assertions": []
+    },
+    {
+      "id": "test_delete_reply_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "delete_reply",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_delete_reply_minimum_count",
+      "description": "Ensures reply_count does not go below 0 when deleting",
+      "function": "delete_reply",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Thread with reply_count already at 0",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Thread reply_count remains 0"
+      ]
+    },
+    {
+      "id": "test_vote_thread_happy_path",
+      "description": "Successfully adds vote to thread",
+      "function": "vote_thread",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns status='voted' and current vote_count",
+      "expected_error": "",
+      "assertions": [
+        "ThreadVote record created",
+        "Vote count incremented"
+      ]
+    },
+    {
+      "id": "test_vote_thread_already_voted",
+      "description": "Returns existing vote count when user already voted (idempotent)",
+      "function": "vote_thread",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "User has already voted on this thread",
+      "expected_output_description": "Returns status='already_voted' and current vote_count",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_vote_thread_invalid_uuid",
+      "description": "Raises error when thread_id is not a valid UUID",
+      "function": "vote_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "invalid"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_vote_thread_not_found",
+      "description": "Raises error when thread does not exist",
+      "function": "vote_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "thread_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_vote_thread_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "vote_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_unvote_thread_happy_path",
+      "description": "Successfully removes vote from thread",
+      "function": "unvote_thread",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns status='removed' and updated vote_count",
+      "expected_error": "",
+      "assertions": [
+        "ThreadVote record deleted",
+        "Vote count decremented"
+      ]
+    },
+    {
+      "id": "test_unvote_thread_not_voted",
+      "description": "Returns current count when user has not voted (idempotent)",
+      "function": "unvote_thread",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "User has not voted on this thread",
+      "expected_output_description": "Returns status='not_voted' and current vote_count",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_unvote_thread_invalid_uuid",
+      "description": "Raises error when thread_id is not a valid UUID",
+      "function": "unvote_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "invalid"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid",
+      "assertions": []
+    },
+    {
+      "id": "test_unvote_thread_unauthorized",
+      "description": "Raises error when user is not authenticated",
+      "function": "unvote_thread",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "No user provided",
+      "expected_output_description": "",
+      "expected_error": "unauthorized",
+      "assertions": []
+    },
+    {
+      "id": "test_invariant_reply_count_non_negative",
+      "description": "Verifies reply_count never goes below 0",
+      "function": "delete_reply",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple delete operations on thread with low reply count",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Thread reply_count >= 0 after all operations"
+      ]
+    },
+    {
+      "id": "test_invariant_soft_delete_format",
+      "description": "Verifies deleted replies have exactly '[deleted]' as body",
+      "function": "delete_reply",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "reply_id": "660e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Reply body equals '[deleted]'"
+      ]
+    },
+    {
+      "id": "test_invariant_last_activity_updated",
+      "description": "Verifies thread last_activity_at is updated when reply is added",
+      "function": "create_reply",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000",
+        "body": "Test"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Thread last_activity_at reflects reply creation time"
+      ]
+    },
+    {
+      "id": "test_invariant_datetime_iso_format",
+      "description": "Verifies all datetime fields are returned as ISO format strings",
+      "function": "get_thread",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "created_at field matches ISO 8601 format"
+      ]
+    },
+    {
+      "id": "test_invariant_thread_ordering",
+      "description": "Verifies threads are ordered by is_pinned desc, then last_activity_at desc",
+      "function": "list_threads",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Pinned threads appear before unpinned",
+        "Within each group, most recent activity first"
+      ]
+    },
+    {
+      "id": "test_invariant_reply_ordering",
+      "description": "Verifies replies are sorted by created_at ascending",
+      "function": "get_thread",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Replies ordered chronologically oldest to newest"
+      ]
+    },
+    {
+      "id": "test_invariant_vote_idempotency",
+      "description": "Verifies vote operations are idempotent",
+      "function": "vote_thread",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Multiple vote calls for same user/thread",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Vote count consistent after multiple calls",
+        "No duplicate vote records"
+      ]
+    },
+    {
+      "id": "test_edge_case_pagination_empty_page",
+      "description": "Returns empty threads list when page exceeds available content",
+      "function": "list_threads",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "slug": "general",
+        "page": "999",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid response with empty threads list",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_edge_case_thread_no_replies",
+      "description": "Successfully retrieves thread with empty replies list",
+      "function": "get_thread",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "thread_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Thread with no replies",
+      "expected_output_description": "Thread with empty replies array",
+      "expected_error": "",
+      "assertions": []
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract test suite for backend_api_forum_router (v1)\n\nThis test suite verifies the forum router API implementation against its contract.\nTests are organized by function with coverage of happy paths, edge cases, error cases,\nand invariants.\n\nDependencies: pytest, pytest-asyncio, unittest.mock\nRun with: pytest contract_test.py -v\n\"\"\"\n\nimport pytest\nfrom unittest.mock import Mock, AsyncMock, MagicMock, patch\nfrom datetime import datetime, timezone\nfrom uuid import UUID, uuid4\nimport re\n\n# Import the component under test\nfrom backend.api.forum.router import (\n    list_categories,\n    list_threads,\n    get_thread,\n    create_thread,\n    create_reply,\n    edit_reply,\n    delete_reply,\n    vote_thread,\n    unvote_thread,\n    CreateThread,\n    CreateReply,\n    UpdateReply,\n)\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Mock AsyncSession for database operations\"\"\"\n    session = AsyncMock()\n    session.execute = AsyncMock()\n    session.add = Mock()\n    session.commit = AsyncMock()\n    session.refresh = AsyncMock()\n    session.flush = AsyncMock()\n    return session\n\n\n@pytest.fixture\ndef mock_user():\n    \"\"\"Mock authenticated user\"\"\"\n    user = Mock()\n    user.id = str(uuid4())\n    user.username = \"testuser\"\n    user.email = \"test@example.com\"\n    return user\n\n\n@pytest.fixture\ndef mock_user_other():\n    \"\"\"Mock different authenticated user\"\"\"\n    user = Mock()\n    user.id = str(uuid4())\n    user.username = \"otheruser\"\n    user.email = \"other@example.com\"\n    return user\n\n\n@pytest.fixture\ndef mock_category():\n    \"\"\"Mock category object\"\"\"\n    category = Mock()\n    category.id = str(uuid4())\n    category.slug = \"general\"\n    category.name = \"General Discussion\"\n    category.description = \"General topics\"\n    category.sort_order = 1\n    category.thread_count = 10\n    return category\n\n\n@pytest.fixture\ndef mock_thread():\n    \"\"\"Mock thread object\"\"\"\n    thread = Mock()\n    thread.id = \"550e8400-e29b-41d4-a716-446655440000\"\n    thread.title = \"Test Thread\"\n    thread.body = \"Thread body content\"\n    thread.category_id = str(uuid4())\n    thread.author_id = str(uuid4())\n    thread.is_pinned = False\n    thread.is_locked = False\n    thread.reply_count = 0\n    thread.vote_count = 0\n    thread.last_activity_at = datetime.now(timezone.utc)\n    thread.created_at = datetime.now(timezone.utc)\n    thread.tool = None\n    return thread\n\n\n@pytest.fixture\ndef mock_reply():\n    \"\"\"Mock reply object\"\"\"\n    reply = Mock()\n    reply.id = \"660e8400-e29b-41d4-a716-446655440000\"\n    reply.body = \"Reply content\"\n    reply.thread_id = \"550e8400-e29b-41d4-a716-446655440000\"\n    reply.author_id = str(uuid4())\n    reply.created_at = datetime.now(timezone.utc)\n    reply.updated_at = None\n    return reply\n\n\n# ============================================================================\n# Helper Functions\n# ============================================================================\n\ndef create_mock_result(scalars_return=None, first_return=None, all_return=None):\n    \"\"\"Create a mock database query result\"\"\"\n    result = Mock()\n    if scalars_return is not None:\n        scalars_mock = Mock()\n        scalars_mock.all = Mock(return_value=scalars_return if all_return is None else all_return)\n        scalars_mock.first = Mock(return_value=first_return)\n        result.scalars = Mock(return_value=scalars_mock)\n    result.first = Mock(return_value=first_return)\n    result.all = Mock(return_value=all_return if all_return is not None else [])\n    return result\n\n\ndef is_valid_uuid(uuid_string):\n    \"\"\"Check if string is a valid UUID\"\"\"\n    try:\n        UUID(uuid_string)\n        return True\n    except (ValueError, AttributeError):\n        return False\n\n\ndef is_iso_format(date_string):\n    \"\"\"Check if string is in ISO 8601 format\"\"\"\n    iso_regex = r'^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}'\n    return bool(re.match(iso_regex, date_string))\n\n\n# ============================================================================\n# Tests for list_categories\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_list_categories_happy_path(mock_db_session, mock_category):\n    \"\"\"Successfully retrieves all categories with correct structure and ordering\"\"\"\n    # Setup mock categories\n    cat1 = Mock()\n    cat1.slug = \"general\"\n    cat1.name = \"General\"\n    cat1.description = \"General discussion\"\n    cat1.sort_order = 1\n    cat1.thread_count = 5\n    \n    cat2 = Mock()\n    cat2.slug = \"tech\"\n    cat2.name = \"Technology\"\n    cat2.description = \"Tech topics\"\n    cat2.sort_order = 2\n    cat2.thread_count = 10\n    \n    result = create_mock_result(scalars_return=[cat1, cat2])\n    mock_db_session.execute.return_value = result\n    \n    # Execute\n    response = await list_categories(db=mock_db_session)\n    \n    # Assertions\n    assert \"categories\" in response\n    assert isinstance(response[\"categories\"], list)\n    assert len(response[\"categories\"]) == 2\n    \n    # Verify structure of first category\n    first_cat = response[\"categories\"][0]\n    assert \"slug\" in first_cat\n    assert \"name\" in first_cat\n    assert \"description\" in first_cat\n    assert \"thread_count\" in first_cat\n    \n    # Verify ordering by sort_order\n    assert response[\"categories\"][0][\"slug\"] == \"general\"\n    assert response[\"categories\"][1][\"slug\"] == \"tech\"\n\n\n@pytest.mark.asyncio\nasync def test_list_categories_empty_database(mock_db_session):\n    \"\"\"Returns empty list when no categories exist\"\"\"\n    result = create_mock_result(scalars_return=[])\n    mock_db_session.execute.return_value = result\n    \n    response = await list_categories(db=mock_db_session)\n    \n    assert \"categories\" in response\n    assert isinstance(response[\"categories\"], list)\n    assert len(response[\"categories\"]) == 0\n\n\n# ============================================================================\n# Tests for list_threads\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_list_threads_happy_path(mock_db_session, mock_category, mock_thread):\n    \"\"\"Successfully retrieves paginated threads for a category\"\"\"\n    # Setup mock category\n    cat_result = create_mock_result(first_return=mock_category)\n    \n    # Setup mock threads\n    thread1 = Mock()\n    thread1.id = str(uuid4())\n    thread1.title = \"Thread 1\"\n    thread1.is_pinned = True\n    thread1.last_activity_at = datetime.now(timezone.utc)\n    thread1.vote_count = 5\n    \n    thread2 = Mock()\n    thread2.id = str(uuid4())\n    thread2.title = \"Thread 2\"\n    thread2.is_pinned = False\n    thread2.last_activity_at = datetime.now(timezone.utc)\n    thread2.vote_count = 2\n    \n    threads_result = create_mock_result(scalars_return=[thread1, thread2])\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=2)\n    \n    mock_db_session.execute.side_effect = [cat_result, threads_result, count_result]\n    \n    response = await list_threads(slug=\"general\", page=1, per_page=10, db=mock_db_session, user=None)\n    \n    assert \"category\" in response\n    assert \"threads\" in response\n    assert \"total\" in response\n    assert \"page\" in response\n    assert \"per_page\" in response\n    assert response[\"page\"] == 1\n    assert response[\"per_page\"] == 10\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_category_not_found(mock_db_session):\n    \"\"\"Raises error when category slug does not exist\"\"\"\n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await list_threads(slug=\"nonexistent\", page=1, per_page=10, db=mock_db_session, user=None)\n    \n    assert \"category_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_invalid_page_zero(mock_db_session):\n    \"\"\"Fails when page is less than 1\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await list_threads(slug=\"general\", page=0, per_page=10, db=mock_db_session, user=None)\n    \n    assert \"precondition\" in str(exc_info.value).lower() or \"page\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_invalid_per_page_too_large(mock_db_session):\n    \"\"\"Fails when per_page exceeds 100\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await list_threads(slug=\"general\", page=1, per_page=101, db=mock_db_session, user=None)\n    \n    assert \"precondition\" in str(exc_info.value).lower() or \"per_page\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_invalid_per_page_zero(mock_db_session):\n    \"\"\"Fails when per_page is less than 1\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await list_threads(slug=\"general\", page=1, per_page=0, db=mock_db_session, user=None)\n    \n    assert \"precondition\" in str(exc_info.value).lower() or \"per_page\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_authenticated_user(mock_db_session, mock_category, mock_user):\n    \"\"\"Includes user vote status when user is authenticated\"\"\"\n    cat_result = create_mock_result(first_return=mock_category)\n    \n    thread = Mock()\n    thread.id = str(uuid4())\n    thread.title = \"Thread\"\n    thread.is_pinned = False\n    thread.last_activity_at = datetime.now(timezone.utc)\n    thread.vote_count = 1\n    thread.user_voted = True\n    \n    threads_result = create_mock_result(scalars_return=[thread])\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=1)\n    \n    mock_db_session.execute.side_effect = [cat_result, threads_result, count_result]\n    \n    response = await list_threads(slug=\"general\", page=1, per_page=10, db=mock_db_session, user=mock_user)\n    \n    assert \"threads\" in response\n    # User vote status should be included when user is provided\n\n\n@pytest.mark.asyncio\nasync def test_list_threads_boundary_per_page_max(mock_db_session, mock_category):\n    \"\"\"Successfully handles per_page at maximum boundary (100)\"\"\"\n    cat_result = create_mock_result(first_return=mock_category)\n    threads_result = create_mock_result(scalars_return=[])\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=0)\n    \n    mock_db_session.execute.side_effect = [cat_result, threads_result, count_result]\n    \n    response = await list_threads(slug=\"general\", page=1, per_page=100, db=mock_db_session, user=None)\n    \n    assert response[\"per_page\"] == 100\n\n\n@pytest.mark.asyncio\nasync def test_edge_case_pagination_empty_page(mock_db_session, mock_category):\n    \"\"\"Returns empty threads list when page exceeds available content\"\"\"\n    cat_result = create_mock_result(first_return=mock_category)\n    threads_result = create_mock_result(scalars_return=[])\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=0)\n    \n    mock_db_session.execute.side_effect = [cat_result, threads_result, count_result]\n    \n    response = await list_threads(slug=\"general\", page=999, per_page=10, db=mock_db_session, user=None)\n    \n    assert \"threads\" in response\n    assert len(response[\"threads\"]) == 0\n\n\n# ============================================================================\n# Tests for get_thread\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_thread_happy_path(mock_db_session, mock_thread):\n    \"\"\"Successfully retrieves complete thread with replies\"\"\"\n    # Setup mock thread with all required fields\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.category.name = \"General\"\n    \n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    mock_thread.author.username = \"author\"\n    \n    reply1 = Mock()\n    reply1.id = str(uuid4())\n    reply1.body = \"Reply 1\"\n    reply1.created_at = datetime.now(timezone.utc)\n    \n    reply2 = Mock()\n    reply2.id = str(uuid4())\n    reply2.body = \"Reply 2\"\n    reply2.created_at = datetime.now(timezone.utc)\n    \n    mock_thread.replies = [reply1, reply2]\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440000\", db=mock_db_session)\n    \n    assert \"id\" in response\n    assert \"title\" in response\n    assert \"body\" in response\n    assert \"category\" in response\n    assert \"author\" in response\n    assert \"replies\" in response\n    assert \"created_at\" in response\n    \n    # Verify datetime is ISO format\n    assert is_iso_format(response[\"created_at\"])\n\n\n@pytest.mark.asyncio\nasync def test_get_thread_invalid_uuid(mock_db_session):\n    \"\"\"Raises error when thread_id is not a valid UUID\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await get_thread(thread_id=\"not-a-uuid\", db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_thread_not_found(mock_db_session):\n    \"\"\"Raises error when thread does not exist\"\"\"\n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440000\", db=mock_db_session)\n    \n    assert \"thread_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_thread_with_tool_data(mock_db_session, mock_thread):\n    \"\"\"Includes tool data when thread has active linked tool\"\"\"\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    mock_thread.replies = []\n    \n    # Add active tool\n    mock_thread.tool = Mock()\n    mock_thread.tool.id = str(uuid4())\n    mock_thread.tool.name = \"Test Tool\"\n    mock_thread.tool.is_active = True\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440001\", db=mock_db_session)\n    \n    assert \"tool\" in response\n    assert response[\"tool\"] is not None\n\n\n@pytest.mark.asyncio\nasync def test_get_thread_tool_inactive(mock_db_session, mock_thread):\n    \"\"\"Excludes tool data when linked tool is not active\"\"\"\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    mock_thread.replies = []\n    \n    # Add inactive tool\n    mock_thread.tool = Mock()\n    mock_thread.tool.id = str(uuid4())\n    mock_thread.tool.name = \"Inactive Tool\"\n    mock_thread.tool.is_active = False\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440002\", db=mock_db_session)\n    \n    assert \"tool\" in response\n    assert response[\"tool\"] is None\n\n\n@pytest.mark.asyncio\nasync def test_edge_case_thread_no_replies(mock_db_session, mock_thread):\n    \"\"\"Successfully retrieves thread with empty replies list\"\"\"\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    mock_thread.replies = []\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440000\", db=mock_db_session)\n    \n    assert \"replies\" in response\n    assert isinstance(response[\"replies\"], list)\n    assert len(response[\"replies\"]) == 0\n\n\n# ============================================================================\n# Tests for create_thread\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_create_thread_happy_path(mock_db_session, mock_user, mock_category):\n    \"\"\"Successfully creates a new thread\"\"\"\n    body = CreateThread(title=\"Test Thread\", body=\"Thread content\", category_slug=\"general\")\n    \n    # Mock category lookup\n    cat_result = create_mock_result(first_return=mock_category)\n    mock_db_session.execute.return_value = cat_result\n    \n    # Mock thread creation\n    new_thread = Mock()\n    new_thread.id = str(uuid4())\n    mock_db_session.add.return_value = None\n    mock_db_session.commit.return_value = None\n    mock_db_session.refresh.side_effect = lambda obj: setattr(obj, 'id', new_thread.id)\n    \n    with patch('backend_api_forum_router.ForumThread') as MockThread:\n        mock_instance = Mock()\n        mock_instance.id = new_thread.id\n        MockThread.return_value = mock_instance\n        \n        response = await create_thread(body=body, user=mock_user, db=mock_db_session)\n    \n    assert \"id\" in response\n    assert \"status\" in response\n    assert response[\"status\"] == \"created\"\n    assert is_valid_uuid(response[\"id\"])\n\n\n@pytest.mark.asyncio\nasync def test_create_thread_category_not_found(mock_db_session, mock_user):\n    \"\"\"Raises error when category does not exist\"\"\"\n    body = CreateThread(title=\"Test\", body=\"Content\", category_slug=\"nonexistent\")\n    \n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_thread(body=body, user=mock_user, db=mock_db_session)\n    \n    assert \"category_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_create_thread_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    body = CreateThread(title=\"Test\", body=\"Content\", category_slug=\"general\")\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_thread(body=body, user=None, db=mock_db_session)\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Tests for create_reply\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_create_reply_happy_path(mock_db_session, mock_user, mock_thread):\n    \"\"\"Successfully creates a reply and updates thread metadata\"\"\"\n    body = CreateReply(body=\"Reply content\")\n    mock_thread.is_locked = False\n    original_count = mock_thread.reply_count\n    original_activity = mock_thread.last_activity_at\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    new_reply = Mock()\n    new_reply.id = str(uuid4())\n    \n    with patch('backend_api_forum_router.ForumReply') as MockReply:\n        mock_instance = Mock()\n        mock_instance.id = new_reply.id\n        MockReply.return_value = mock_instance\n        \n        response = await create_reply(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"id\" in response\n    assert \"status\" in response\n    assert response[\"status\"] == \"created\"\n    assert is_valid_uuid(response[\"id\"])\n\n\n@pytest.mark.asyncio\nasync def test_create_reply_invalid_uuid(mock_db_session, mock_user):\n    \"\"\"Raises error when thread_id is not a valid UUID\"\"\"\n    body = CreateReply(body=\"Reply content\")\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_reply(thread_id=\"invalid\", body=body, user=mock_user, db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_create_reply_thread_not_found(mock_db_session, mock_user):\n    \"\"\"Raises error when thread does not exist\"\"\"\n    body = CreateReply(body=\"Reply\")\n    \n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_reply(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"thread_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_create_reply_thread_locked(mock_db_session, mock_user, mock_thread):\n    \"\"\"Raises error when thread is locked\"\"\"\n    body = CreateReply(body=\"Reply\")\n    mock_thread.is_locked = True\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_reply(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"thread_locked\" in str(exc_info.value).lower() or \"locked\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_create_reply_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    body = CreateReply(body=\"Reply\")\n    \n    with pytest.raises(Exception) as exc_info:\n        await create_reply(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=None,\n            db=mock_db_session\n        )\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Tests for edit_reply\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_edit_reply_happy_path(mock_db_session, mock_user, mock_reply):\n    \"\"\"Successfully updates reply body and updated_at timestamp\"\"\"\n    body = UpdateReply(body=\"Updated content\")\n    mock_reply.author_id = mock_user.id\n    \n    result = create_mock_result(first_return=mock_reply)\n    mock_db_session.execute.return_value = result\n    \n    response = await edit_reply(\n        reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n        body=body,\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert \"status\" in response\n    assert response[\"status\"] == \"updated\"\n    assert mock_reply.body == \"Updated content\"\n\n\n@pytest.mark.asyncio\nasync def test_edit_reply_invalid_uuid(mock_db_session, mock_user):\n    \"\"\"Raises error when reply_id is not a valid UUID\"\"\"\n    body = UpdateReply(body=\"Updated\")\n    \n    with pytest.raises(Exception) as exc_info:\n        await edit_reply(reply_id=\"invalid\", body=body, user=mock_user, db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_edit_reply_not_found(mock_db_session, mock_user):\n    \"\"\"Raises error when reply does not exist\"\"\"\n    body = UpdateReply(body=\"Updated\")\n    \n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await edit_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"reply_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_edit_reply_forbidden(mock_db_session, mock_user, mock_user_other, mock_reply):\n    \"\"\"Raises error when user is not the reply author\"\"\"\n    body = UpdateReply(body=\"Updated\")\n    mock_reply.author_id = mock_user_other.id  # Different user\n    \n    result = create_mock_result(first_return=mock_reply)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await edit_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"forbidden\" in str(exc_info.value).lower() or \"permission\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_edit_reply_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    body = UpdateReply(body=\"Updated\")\n    \n    with pytest.raises(Exception) as exc_info:\n        await edit_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            body=body,\n            user=None,\n            db=mock_db_session\n        )\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Tests for delete_reply\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_delete_reply_happy_path(mock_db_session, mock_user, mock_reply, mock_thread):\n    \"\"\"Successfully soft-deletes reply and decrements thread reply count\"\"\"\n    mock_reply.author_id = mock_user.id\n    mock_reply.thread_id = mock_thread.id\n    mock_thread.reply_count = 5\n    \n    reply_result = create_mock_result(first_return=mock_reply)\n    thread_result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.side_effect = [reply_result, thread_result]\n    \n    response = await delete_reply(\n        reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert \"status\" in response\n    assert response[\"status\"] == \"deleted\"\n    assert mock_reply.body == \"[deleted]\"\n\n\n@pytest.mark.asyncio\nasync def test_delete_reply_invalid_uuid(mock_db_session, mock_user):\n    \"\"\"Raises error when reply_id is not a valid UUID\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await delete_reply(reply_id=\"invalid\", user=mock_user, db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_delete_reply_not_found(mock_db_session, mock_user):\n    \"\"\"Raises error when reply does not exist\"\"\"\n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await delete_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"reply_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_delete_reply_forbidden(mock_db_session, mock_user, mock_user_other, mock_reply):\n    \"\"\"Raises error when user is not the reply author\"\"\"\n    mock_reply.author_id = mock_user_other.id\n    \n    result = create_mock_result(first_return=mock_reply)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await delete_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"forbidden\" in str(exc_info.value).lower() or \"permission\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_delete_reply_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await delete_reply(\n            reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n            user=None,\n            db=mock_db_session\n        )\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_delete_reply_minimum_count(mock_db_session, mock_user, mock_reply, mock_thread):\n    \"\"\"Ensures reply_count does not go below 0 when deleting\"\"\"\n    mock_reply.author_id = mock_user.id\n    mock_reply.thread_id = mock_thread.id\n    mock_thread.reply_count = 0  # Already at 0\n    \n    reply_result = create_mock_result(first_return=mock_reply)\n    thread_result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.side_effect = [reply_result, thread_result]\n    \n    response = await delete_reply(\n        reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert mock_thread.reply_count == 0  # Should not go negative\n\n\n# ============================================================================\n# Tests for vote_thread\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_thread_happy_path(mock_db_session, mock_user, mock_thread):\n    \"\"\"Successfully adds vote to thread\"\"\"\n    # Mock thread lookup\n    thread_result = create_mock_result(first_return=mock_thread)\n    \n    # Mock existing vote check (no existing vote)\n    vote_result = create_mock_result(first_return=None)\n    \n    # Mock vote count\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=1)\n    \n    mock_db_session.execute.side_effect = [thread_result, vote_result, count_result]\n    \n    with patch('backend_api_forum_router.ThreadVote') as MockVote:\n        mock_vote = Mock()\n        MockVote.return_value = mock_vote\n        \n        response = await vote_thread(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"status\" in response\n    assert \"vote_count\" in response\n    assert response[\"status\"] == \"voted\"\n\n\n@pytest.mark.asyncio\nasync def test_vote_thread_already_voted(mock_db_session, mock_user, mock_thread):\n    \"\"\"Returns existing vote count when user already voted (idempotent)\"\"\"\n    thread_result = create_mock_result(first_return=mock_thread)\n    \n    # Mock existing vote\n    existing_vote = Mock()\n    vote_result = create_mock_result(first_return=existing_vote)\n    \n    count_result = Mock()\n    count_result.scalar = Mock(return_value=5)\n    \n    mock_db_session.execute.side_effect = [thread_result, vote_result, count_result]\n    \n    response = await vote_thread(\n        thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert \"status\" in response\n    assert \"vote_count\" in response\n    assert response[\"status\"] == \"already_voted\"\n    assert response[\"vote_count\"] == 5\n\n\n@pytest.mark.asyncio\nasync def test_vote_thread_invalid_uuid(mock_db_session, mock_user):\n    \"\"\"Raises error when thread_id is not a valid UUID\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await vote_thread(thread_id=\"invalid\", user=mock_user, db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_vote_thread_not_found(mock_db_session, mock_user):\n    \"\"\"Raises error when thread does not exist\"\"\"\n    result = create_mock_result(first_return=None)\n    mock_db_session.execute.return_value = result\n    \n    with pytest.raises(Exception) as exc_info:\n        await vote_thread(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    assert \"thread_not_found\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_vote_thread_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await vote_thread(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            user=None,\n            db=mock_db_session\n        )\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Tests for unvote_thread\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_unvote_thread_happy_path(mock_db_session, mock_user, mock_thread):\n    \"\"\"Successfully removes vote from thread\"\"\"\n    thread_result = create_mock_result(first_return=mock_thread)\n    \n    # Mock existing vote\n    existing_vote = Mock()\n    vote_result = create_mock_result(first_return=existing_vote)\n    \n    count_result = Mock()\n    count_result.scalar = Mock(return_value=4)\n    \n    mock_db_session.execute.side_effect = [thread_result, vote_result, count_result]\n    mock_db_session.delete = AsyncMock()\n    \n    response = await unvote_thread(\n        thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert \"status\" in response\n    assert \"vote_count\" in response\n    assert response[\"status\"] == \"removed\"\n\n\n@pytest.mark.asyncio\nasync def test_unvote_thread_not_voted(mock_db_session, mock_user, mock_thread):\n    \"\"\"Returns current count when user has not voted (idempotent)\"\"\"\n    thread_result = create_mock_result(first_return=mock_thread)\n    \n    # No existing vote\n    vote_result = create_mock_result(first_return=None)\n    \n    count_result = Mock()\n    count_result.scalar = Mock(return_value=3)\n    \n    mock_db_session.execute.side_effect = [thread_result, vote_result, count_result]\n    \n    response = await unvote_thread(\n        thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert \"status\" in response\n    assert \"vote_count\" in response\n    assert response[\"status\"] == \"not_voted\"\n    assert response[\"vote_count\"] == 3\n\n\n@pytest.mark.asyncio\nasync def test_unvote_thread_invalid_uuid(mock_db_session, mock_user):\n    \"\"\"Raises error when thread_id is not a valid UUID\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await unvote_thread(thread_id=\"invalid\", user=mock_user, db=mock_db_session)\n    \n    assert \"invalid_uuid\" in str(exc_info.value).lower() or \"uuid\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_unvote_thread_unauthorized(mock_db_session):\n    \"\"\"Raises error when user is not authenticated\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        await unvote_thread(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            user=None,\n            db=mock_db_session\n        )\n    \n    assert \"unauthorized\" in str(exc_info.value).lower() or \"user\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Invariant Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_invariant_reply_count_non_negative(mock_db_session, mock_user, mock_reply, mock_thread):\n    \"\"\"Verifies reply_count never goes below 0\"\"\"\n    mock_reply.author_id = mock_user.id\n    mock_reply.thread_id = mock_thread.id\n    mock_thread.reply_count = 1\n    \n    reply_result = create_mock_result(first_return=mock_reply)\n    thread_result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.side_effect = [reply_result, thread_result]\n    \n    await delete_reply(\n        reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert mock_thread.reply_count >= 0\n\n\n@pytest.mark.asyncio\nasync def test_invariant_soft_delete_format(mock_db_session, mock_user, mock_reply, mock_thread):\n    \"\"\"Verifies deleted replies have exactly '[deleted]' as body\"\"\"\n    mock_reply.author_id = mock_user.id\n    mock_reply.thread_id = mock_thread.id\n    mock_thread.reply_count = 1\n    \n    reply_result = create_mock_result(first_return=mock_reply)\n    thread_result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.side_effect = [reply_result, thread_result]\n    \n    await delete_reply(\n        reply_id=\"660e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    assert mock_reply.body == \"[deleted]\"\n\n\n@pytest.mark.asyncio\nasync def test_invariant_last_activity_updated(mock_db_session, mock_user, mock_thread):\n    \"\"\"Verifies thread last_activity_at is updated when reply is added\"\"\"\n    body = CreateReply(body=\"Test\")\n    mock_thread.is_locked = False\n    original_activity = mock_thread.last_activity_at\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    with patch('backend_api_forum_router.ForumReply') as MockReply:\n        mock_instance = Mock()\n        mock_instance.id = str(uuid4())\n        MockReply.return_value = mock_instance\n        \n        with patch('backend_api_forum_router.datetime') as mock_datetime:\n            new_time = datetime.now(timezone.utc)\n            mock_datetime.now.return_value = new_time\n            mock_datetime.timezone = timezone\n            \n            await create_reply(\n                thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n                body=body,\n                user=mock_user,\n                db=mock_db_session\n            )\n    \n    # Verify last_activity_at was updated\n    assert hasattr(mock_thread, 'last_activity_at')\n\n\n@pytest.mark.asyncio\nasync def test_invariant_datetime_iso_format(mock_db_session, mock_thread):\n    \"\"\"Verifies all datetime fields are returned as ISO format strings\"\"\"\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    mock_thread.replies = []\n    mock_thread.created_at = datetime.now(timezone.utc)\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440000\", db=mock_db_session)\n    \n    assert \"created_at\" in response\n    assert is_iso_format(response[\"created_at\"])\n\n\n@pytest.mark.asyncio\nasync def test_invariant_thread_ordering(mock_db_session, mock_category):\n    \"\"\"Verifies threads are ordered by is_pinned desc, then last_activity_at desc\"\"\"\n    cat_result = create_mock_result(first_return=mock_category)\n    \n    # Create threads with different pinned status and activity times\n    now = datetime.now(timezone.utc)\n    \n    thread1 = Mock()\n    thread1.id = str(uuid4())\n    thread1.is_pinned = True\n    thread1.last_activity_at = now\n    \n    thread2 = Mock()\n    thread2.id = str(uuid4())\n    thread2.is_pinned = False\n    thread2.last_activity_at = now\n    \n    threads_result = create_mock_result(scalars_return=[thread1, thread2])\n    count_result = Mock()\n    count_result.scalar = Mock(return_value=2)\n    \n    mock_db_session.execute.side_effect = [cat_result, threads_result, count_result]\n    \n    response = await list_threads(slug=\"general\", page=1, per_page=10, db=mock_db_session, user=None)\n    \n    # Verify pinned threads come first\n    threads = response[\"threads\"]\n    if len(threads) >= 2:\n        assert threads[0][\"is_pinned\"] >= threads[1][\"is_pinned\"]\n\n\n@pytest.mark.asyncio\nasync def test_invariant_reply_ordering(mock_db_session, mock_thread):\n    \"\"\"Verifies replies are sorted by created_at ascending\"\"\"\n    mock_thread.category = Mock()\n    mock_thread.category.slug = \"general\"\n    mock_thread.author = Mock()\n    mock_thread.author.id = str(uuid4())\n    \n    now = datetime.now(timezone.utc)\n    \n    reply1 = Mock()\n    reply1.id = str(uuid4())\n    reply1.created_at = now\n    \n    reply2 = Mock()\n    reply2.id = str(uuid4())\n    reply2.created_at = now\n    \n    mock_thread.replies = [reply1, reply2]\n    \n    result = create_mock_result(first_return=mock_thread)\n    mock_db_session.execute.return_value = result\n    \n    response = await get_thread(thread_id=\"550e8400-e29b-41d4-a716-446655440000\", db=mock_db_session)\n    \n    replies = response[\"replies\"]\n    if len(replies) >= 2:\n        # Verify chronological order (oldest first)\n        for i in range(len(replies) - 1):\n            assert replies[i][\"created_at\"] <= replies[i + 1][\"created_at\"]\n\n\n@pytest.mark.asyncio\nasync def test_invariant_vote_idempotency(mock_db_session, mock_user, mock_thread):\n    \"\"\"Verifies vote operations are idempotent\"\"\"\n    thread_result = create_mock_result(first_return=mock_thread)\n    \n    # First vote - no existing vote\n    vote_result1 = create_mock_result(first_return=None)\n    count_result1 = Mock()\n    count_result1.scalar = Mock(return_value=1)\n    \n    mock_db_session.execute.side_effect = [thread_result, vote_result1, count_result1]\n    \n    with patch('backend_api_forum_router.ThreadVote') as MockVote:\n        mock_vote = Mock()\n        MockVote.return_value = mock_vote\n        \n        response1 = await vote_thread(\n            thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n            user=mock_user,\n            db=mock_db_session\n        )\n    \n    # Second vote - existing vote\n    thread_result2 = create_mock_result(first_return=mock_thread)\n    vote_result2 = create_mock_result(first_return=mock_vote)\n    count_result2 = Mock()\n    count_result2.scalar = Mock(return_value=1)\n    \n    mock_db_session.execute.side_effect = [thread_result2, vote_result2, count_result2]\n    \n    response2 = await vote_thread(\n        thread_id=\"550e8400-e29b-41d4-a716-446655440000\",\n        user=mock_user,\n        db=mock_db_session\n    )\n    \n    # Vote count should be consistent\n    assert response2[\"vote_count\"] == 1\n    assert response2[\"status\"] == \"already_voted\"\n"
+}

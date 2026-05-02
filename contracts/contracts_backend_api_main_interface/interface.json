@@ -1,0 +1,84 @@
+{
+  "component_id": "contracts_backend_api_main_interface",
+  "name": "Backend API Main Interface",
+  "description": "FastAPI application entry point for centaur.tools API - a community-governed registry for AI tools with provenance tracking. Configures and assembles the application by registering route modules (auth, feed, forum, notifications, provenance, registry, search, users, voting) and overriding authentication dependency to use cookie-based auth.",
+  "version": 1,
+  "types": [
+    {
+      "name": "HealthResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Status indicator, always 'ok'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response structure for health check endpoint",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "health",
+      "description": "Health check endpoint that returns the operational status of the API. Always returns a successful status indicator.",
+      "inputs": [],
+      "output_type": "dict[str, str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dictionary with 'status' key set to 'ok'"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "backend.api.auth.router",
+    "backend.api.feed.router",
+    "backend.api.forum.router",
+    "backend.api.notifications.router",
+    "backend.api.provenance.router",
+    "backend.api.registry.router",
+    "backend.api.search.router",
+    "backend.api.users.router",
+    "backend.api.voting.router",
+    "backend.api.auth.dependencies"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "FastAPI app title: 'centaur.tools API'",
+    "FastAPI app version: '1.0.0'",
+    "Auth dependency override: placeholder_get_current_user -> real_get_current_user",
+    "Health endpoint path: '/api/health'",
+    "Nine routers registered: auth, feed, users, registry, search, voting, provenance, forum, notifications"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

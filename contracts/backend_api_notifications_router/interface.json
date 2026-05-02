@@ -1,0 +1,305 @@
+{
+  "component_id": "backend_api_notifications_router",
+  "name": "Notifications Router",
+  "description": "FastAPI router providing HTTP endpoints for user notification management. Handles listing user notifications (limited to 50 most recent), counting unread notifications, marking individual notifications as read, and marking all user notifications as read. All endpoints require authentication and operate on notifications scoped to the authenticated user.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "list_notifications",
+      "description": "Retrieves the 50 most recent notifications for the authenticated user, ordered by creation date descending. Returns notification data as a list of dictionaries with serialized fields.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, list[dict]]",
+      "error_cases": [],
+      "preconditions": [
+        "user must be authenticated (enforced by get_current_user dependency)",
+        "db session must be active"
+      ],
+      "postconditions": [
+        "Returns dictionary with 'notifications' key containing list of up to 50 notification objects",
+        "Notifications are ordered by created_at descending",
+        "Each notification has id converted to string and created_at converted to ISO format"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes SELECT query on Notification table filtered by user_id"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Reads from Notification table"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 100,
+        "max_memory_mb": null,
+        "complexity": "O(1)"
+      }
+    },
+    {
+      "name": "unread_count",
+      "description": "Returns the count of unread notifications for the authenticated user.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, int]",
+      "error_cases": [],
+      "preconditions": [
+        "user must be authenticated (enforced by get_current_user dependency)",
+        "db session must be active"
+      ],
+      "postconditions": [
+        "Returns dictionary with 'count' key containing integer count of unread notifications"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes COUNT query on Notification table filtered by user_id and read=False"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Reads from Notification table"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 50,
+        "max_memory_mb": null,
+        "complexity": "O(1)"
+      }
+    },
+    {
+      "name": "mark_read",
+      "description": "Marks a specific notification as read for the authenticated user. Validates that the notification exists and belongs to the user before updating.",
+      "inputs": [
+        {
+          "name": "notification_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID string of the notification to mark as read",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, str]",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "notification_id is not a valid UUID string",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "notification_not_found",
+          "condition": "Notification does not exist or does not belong to user",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Notification not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "user must be authenticated (enforced by get_current_user dependency)",
+        "notification_id must be a valid UUID string",
+        "notification must exist and belong to the authenticated user"
+      ],
+      "postconditions": [
+        "Notification.read field is set to True",
+        "Database changes are committed",
+        "Returns {'status': 'read'} on success"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes SELECT query to fetch notification by id and user_id",
+        "Updates Notification.read field to True",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Updates Notification.read field and commits transaction"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 100,
+        "max_memory_mb": null,
+        "complexity": "O(1)"
+      }
+    },
+    {
+      "name": "mark_all_read",
+      "description": "Marks all unread notifications as read for the authenticated user using a bulk update operation.",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user from dependency injection",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session from dependency injection",
+          "validators": []
+        }
+      ],
+      "output_type": "dict[str, str]",
+      "error_cases": [],
+      "preconditions": [
+        "user must be authenticated (enforced by get_current_user dependency)",
+        "db session must be active"
+      ],
+      "postconditions": [
+        "All notifications with user_id matching authenticated user and read=False are updated to read=True",
+        "Database changes are committed",
+        "Returns {'status': 'all_read'}"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes UPDATE query on Notification table for all unread notifications belonging to user",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Bulk updates Notification.read field for all user's unread notifications and commits transaction"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 200,
+        "max_memory_mb": null,
+        "complexity": "O(n)"
+      }
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "uuid",
+    "backend.auth.dependencies",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.auth.dependencies": [
+      "get_current_user"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "Notification",
+      "User"
+    ]
+  },
+  "invariants": [
+    "All endpoints are scoped to authenticated user only - no cross-user access",
+    "list_notifications always returns maximum 50 notifications",
+    "Notifications are ordered by created_at descending in list_notifications",
+    "Router prefix is '/api/notifications'",
+    "Router is tagged with 'notifications' for OpenAPI documentation"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "Notification table"
+    ],
+    "writes": [
+      "Notification.read field"
+    ],
+    "rationale": "Module performs read operations on Notification table for listing and counting, and write operations to update the read status of notifications. All operations are scoped to the authenticated user's notifications only.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "user_scoped",
+        "fields": [
+          "id",
+          "user_id",
+          "type",
+          "title",
+          "body",
+          "data",
+          "read",
+          "created_at"
+        ],
+        "rationale": "Reads notification data filtered by user_id for display and counting"
+      },
+      {
+        "type": "database_write",
+        "classification": "user_scoped",
+        "fields": [
+          "read"
+        ],
+        "rationale": "Updates read status for individual or bulk notification marking"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "user_notifications"
+    ],
+    "rationale": "This router owns the HTTP API surface for notification retrieval and read-status management for authenticated users"
+  }
+}

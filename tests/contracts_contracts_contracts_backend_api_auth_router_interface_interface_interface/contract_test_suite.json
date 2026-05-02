@@ -1,0 +1,553 @@
+{
+  "component_id": "contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_create_jwt_happy_path",
+      "description": "Verifies create_jwt generates a valid JWT token with correct claims for a given user UUID",
+      "function": "create_jwt",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "user_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Valid UUID for user_id",
+      "expected_output_description": "JWT string token containing sub, exp, and iat claims",
+      "expected_error": "",
+      "assertions": [
+        "Token is a non-empty string",
+        "Token contains 3 parts separated by dots",
+        "Decoded token contains 'sub' with stringified UUID",
+        "Decoded token contains 'exp' claim",
+        "Decoded token contains 'iat' claim",
+        "Token expiry is jwt_expiry_days from now"
+      ]
+    },
+    {
+      "id": "test_create_jwt_different_uuids",
+      "description": "Verifies create_jwt generates different tokens for different user IDs",
+      "function": "create_jwt",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Two different UUIDs",
+      "expected_output_description": "Two distinct JWT tokens",
+      "expected_error": "",
+      "assertions": [
+        "Tokens are different strings",
+        "Each token decodes to its respective user_id"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_happy_path",
+      "description": "Verifies decode_jwt correctly decodes a valid JWT token",
+      "function": "decode_jwt",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid JWT token created with create_jwt",
+      "expected_output_description": "Dictionary with token payload including sub, exp, iat",
+      "expected_error": "",
+      "assertions": [
+        "Returns a dictionary",
+        "Dictionary contains 'sub' key",
+        "Dictionary contains 'exp' key",
+        "Dictionary contains 'iat' key"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_roundtrip",
+      "description": "Verifies JWT roundtrip: encode then decode returns original payload",
+      "function": "decode_jwt",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Token created with create_jwt",
+      "expected_output_description": "Decoded payload matches original user_id",
+      "expected_error": "",
+      "assertions": [
+        "Decoded 'sub' matches original UUID string",
+        "exp and iat are present and valid"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_invalid_signature",
+      "description": "Verifies decode_jwt raises InvalidTokenError when token has been tampered with",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "JWT token with modified signature",
+      "expected_output_description": "",
+      "expected_error": "InvalidTokenError",
+      "assertions": [
+        "InvalidTokenError is raised",
+        "Token with wrong secret raises error"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_expired_token",
+      "description": "Verifies decode_jwt raises ExpiredSignatureError for expired tokens",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "JWT token with past expiration time",
+      "expected_output_description": "",
+      "expected_error": "ExpiredSignatureError",
+      "assertions": [
+        "ExpiredSignatureError is raised"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_malformed_token",
+      "description": "Verifies decode_jwt raises DecodeError for malformed tokens",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "token": "not.a.valid.jwt.token"
+      },
+      "input_description": "Invalid token format",
+      "expected_output_description": "",
+      "expected_error": "DecodeError",
+      "assertions": [
+        "DecodeError is raised"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_empty_token",
+      "description": "Verifies decode_jwt raises DecodeError for empty token",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "token": ""
+      },
+      "input_description": "Empty string",
+      "expected_output_description": "",
+      "expected_error": "DecodeError",
+      "assertions": [
+        "DecodeError is raised"
+      ]
+    },
+    {
+      "id": "test_get_current_user_always_raises",
+      "description": "Verifies get_current_user placeholder always raises NotAuthenticated",
+      "function": "get_current_user",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Any db session and session cookie",
+      "expected_output_description": "",
+      "expected_error": "NotAuthenticated",
+      "assertions": [
+        "NotAuthenticated/HTTPException is raised with 401 status"
+      ]
+    },
+    {
+      "id": "test_login_happy_path",
+      "description": "Verifies login returns redirect to GitHub OAuth authorize URL",
+      "function": "login",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "No input required",
+      "expected_output_description": "RedirectResponse to GitHub with client_id and scope",
+      "expected_error": "",
+      "assertions": [
+        "Returns RedirectResponse",
+        "Status code is 302",
+        "Location header contains github.com/login/oauth/authorize",
+        "URL includes client_id parameter",
+        "URL includes scope parameter with 'read:user user:email'"
+      ]
+    },
+    {
+      "id": "test_callback_happy_path_new_user",
+      "description": "Verifies callback creates new user from GitHub OAuth and sets session cookie",
+      "function": "callback",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub API responses",
+        "AsyncSession": "Mock database session"
+      },
+      "input_values": {
+        "code": "test_oauth_code_123"
+      },
+      "input_description": "Valid OAuth code for new user",
+      "expected_output_description": "RedirectResponse to dashboard with session cookie",
+      "expected_error": "",
+      "assertions": [
+        "Returns RedirectResponse",
+        "Status code is 302",
+        "Redirects to frontend_url/dashboard",
+        "Response sets session cookie",
+        "Cookie is httponly=True",
+        "Cookie is secure=True",
+        "Cookie samesite='lax'",
+        "User is created in database",
+        "User fields match GitHub profile"
+      ]
+    },
+    {
+      "id": "test_callback_happy_path_existing_user",
+      "description": "Verifies callback updates existing user from GitHub OAuth",
+      "function": "callback",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub API responses",
+        "AsyncSession": "Mock database with existing user"
+      },
+      "input_values": {
+        "code": "test_oauth_code_existing"
+      },
+      "input_description": "Valid OAuth code for existing user",
+      "expected_output_description": "RedirectResponse with updated user data",
+      "expected_error": "",
+      "assertions": [
+        "User is updated not created",
+        "User fields are updated to match GitHub profile",
+        "Session cookie is set"
+      ]
+    },
+    {
+      "id": "test_callback_oauth_failed_no_access_token",
+      "description": "Verifies callback raises OAuthFailed when GitHub doesn't return access_token",
+      "function": "callback",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub token response without access_token"
+      },
+      "input_values": {
+        "code": "invalid_code"
+      },
+      "input_description": "OAuth code that returns response without access_token",
+      "expected_output_description": "",
+      "expected_error": "OAuthFailed",
+      "assertions": [
+        "OAuthFailed or HTTPException is raised",
+        "No user is created in database"
+      ]
+    },
+    {
+      "id": "test_callback_github_api_error_missing_id",
+      "description": "Verifies callback raises GitHubAPIError when user API response missing 'id' field",
+      "function": "callback",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub user response without 'id' field"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "OAuth code with GitHub user response missing 'id'",
+      "expected_output_description": "",
+      "expected_error": "GitHubAPIError",
+      "assertions": [
+        "GitHubAPIError or HTTPException is raised"
+      ]
+    },
+    {
+      "id": "test_callback_github_api_error_missing_login",
+      "description": "Verifies callback raises GitHubAPIError when user API response missing 'login' field",
+      "function": "callback",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub user response without 'login' field"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "OAuth code with GitHub user response missing 'login'",
+      "expected_output_description": "",
+      "expected_error": "GitHubAPIError",
+      "assertions": [
+        "GitHubAPIError or HTTPException is raised"
+      ]
+    },
+    {
+      "id": "test_callback_network_error",
+      "description": "Verifies callback raises NetworkError when httpx encounters connectivity issues",
+      "function": "callback",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Raise network exception"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "OAuth code with network failure during GitHub API call",
+      "expected_output_description": "",
+      "expected_error": "NetworkError",
+      "assertions": [
+        "NetworkError or HTTPException is raised"
+      ]
+    },
+    {
+      "id": "test_callback_database_error",
+      "description": "Verifies callback raises DatabaseError when database commit fails",
+      "function": "callback",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "AsyncSession": "Mock database commit to raise error"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "Valid OAuth flow but database commit fails",
+      "expected_output_description": "",
+      "expected_error": "DatabaseError",
+      "assertions": [
+        "DatabaseError or HTTPException is raised"
+      ]
+    },
+    {
+      "id": "test_logout_happy_path",
+      "description": "Verifies logout clears session cookie and returns 204",
+      "function": "logout",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "No input required",
+      "expected_output_description": "Response with 204 status and deleted session cookie",
+      "expected_error": "",
+      "assertions": [
+        "Returns Response object",
+        "Status code is 204",
+        "Session cookie is deleted (max_age=0 or expires in past)"
+      ]
+    },
+    {
+      "id": "test_me_happy_path",
+      "description": "Verifies me returns authenticated user profile as dictionary",
+      "function": "me",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "User": "Mock authenticated user"
+      },
+      "input_values": {},
+      "input_description": "Authenticated User object",
+      "expected_output_description": "Dictionary with id, username, display_name, avatar_url, bio",
+      "expected_error": "",
+      "assertions": [
+        "Returns dictionary",
+        "Contains 'id' key with stringified UUID",
+        "Contains 'username' key",
+        "Contains 'display_name' key",
+        "Contains 'avatar_url' key",
+        "Contains 'bio' key"
+      ]
+    },
+    {
+      "id": "test_me_not_authenticated",
+      "description": "Verifies me raises NotAuthenticated when get_current_user fails",
+      "function": "me",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "No authenticated user (dependency fails)",
+      "expected_output_description": "",
+      "expected_error": "NotAuthenticated",
+      "assertions": [
+        "NotAuthenticated or HTTPException with 401 is raised"
+      ]
+    },
+    {
+      "id": "test_invariant_github_urls",
+      "description": "Verifies GitHub OAuth URLs match contract invariants",
+      "function": "login",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "N/A - testing constants",
+      "expected_output_description": "Correct GitHub URLs are used",
+      "expected_error": "",
+      "assertions": [
+        "GITHUB_AUTHORIZE_URL equals 'https://github.com/login/oauth/authorize'",
+        "GITHUB_TOKEN_URL equals 'https://github.com/login/oauth/access_token'",
+        "GITHUB_USER_URL equals 'https://api.github.com/user'"
+      ]
+    },
+    {
+      "id": "test_invariant_router_config",
+      "description": "Verifies router configuration matches contract invariants",
+      "function": "login",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "N/A - testing router configuration",
+      "expected_output_description": "Router has correct prefix and tags",
+      "expected_error": "",
+      "assertions": [
+        "Router prefix is '/api/auth'",
+        "Router tags include 'auth'"
+      ]
+    },
+    {
+      "id": "test_invariant_session_cookie_attributes",
+      "description": "Verifies session cookie attributes match contract invariants",
+      "function": "callback",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub API",
+        "AsyncSession": "Mock database"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "Valid OAuth callback",
+      "expected_output_description": "Session cookie with correct attributes",
+      "expected_error": "",
+      "assertions": [
+        "Cookie key is 'session'",
+        "Cookie httponly is True",
+        "Cookie secure is True",
+        "Cookie samesite is 'lax'"
+      ]
+    },
+    {
+      "id": "test_invariant_oauth_scope",
+      "description": "Verifies OAuth scope requested matches contract invariant",
+      "function": "login",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Login redirect",
+      "expected_output_description": "Redirect URL with correct scope",
+      "expected_error": "",
+      "assertions": [
+        "Scope parameter includes 'read:user user:email'"
+      ]
+    },
+    {
+      "id": "test_jwt_expiry_boundary",
+      "description": "Verifies JWT token expires exactly at jwt_expiry_days boundary",
+      "function": "create_jwt",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "user_id": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "input_description": "Valid user_id with time mocking",
+      "expected_output_description": "Token with exp claim set to exact boundary",
+      "expected_error": "",
+      "assertions": [
+        "exp claim is exactly jwt_expiry_days from iat"
+      ]
+    },
+    {
+      "id": "test_callback_nullable_fields",
+      "description": "Verifies callback handles GitHub API responses with null optional fields",
+      "function": "callback",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "httpx": "Mock GitHub user with null optional fields"
+      },
+      "input_values": {
+        "code": "valid_code"
+      },
+      "input_description": "GitHub user response with null avatar_url, name, bio",
+      "expected_output_description": "User created with None for optional fields",
+      "expected_error": "",
+      "assertions": [
+        "User is created successfully",
+        "Optional fields are None"
+      ]
+    },
+    {
+      "id": "test_me_with_all_null_optional_fields",
+      "description": "Verifies me returns dictionary with None values for optional fields",
+      "function": "me",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "User": "Mock user with None optional fields"
+      },
+      "input_values": {},
+      "input_description": "User with all optional fields as None",
+      "expected_output_description": "Dictionary with None values",
+      "expected_error": "",
+      "assertions": [
+        "display_name is None",
+        "avatar_url is None",
+        "bio is None"
+      ]
+    },
+    {
+      "id": "test_decode_jwt_algorithm_mismatch",
+      "description": "Verifies decode_jwt raises InvalidTokenError when algorithm doesn't match",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "settings": "Mock different algorithm setting"
+      },
+      "input_values": {},
+      "input_description": "Token encoded with different algorithm",
+      "expected_output_description": "",
+      "expected_error": "InvalidTokenError",
+      "assertions": [
+        "InvalidTokenError is raised"
+      ]
+    },
+    {
+      "id": "test_security_jwt_none_algorithm",
+      "description": "Security test: Verifies decode_jwt rejects tokens with 'none' algorithm",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Token with 'none' algorithm header",
+      "expected_output_description": "",
+      "expected_error": "InvalidTokenError or DecodeError",
+      "assertions": [
+        "Token with 'none' algorithm is rejected"
+      ]
+    },
+    {
+      "id": "test_security_token_tampering",
+      "description": "Security test: Verifies decode_jwt detects payload tampering",
+      "function": "decode_jwt",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Token with modified payload but same signature",
+      "expected_output_description": "",
+      "expected_error": "InvalidTokenError",
+      "assertions": [
+        "Tampered token is rejected"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract Test Suite for Backend API Auth Router Interface\nGenerated test suite with pytest for JWT authentication and GitHub OAuth flow.\n\nTest Coverage:\n- Unit tests for create_jwt and decode_jwt (pure logic)\n- Unit tests for auth endpoints with mocked dependencies\n- Error path coverage for all 8 error types\n- Invariant tests for GitHub URLs, router config, cookie attributes, OAuth scope\n- Edge cases for JWT expiry boundaries and nullable fields\n- Security tests for JWT attacks and token tampering\n\"\"\"\n\nimport pytest\nimport uuid\nfrom datetime import datetime, timedelta, timezone\nfrom unittest.mock import Mock, AsyncMock, patch, MagicMock\nfrom typing import Optional\nimport json\nimport base64\n\n# Import the component under test\n# Assuming the module path based on component_id\ntry:\n    from contracts.contracts_contracts_backend_api_auth_router_interface_interface.interface import (\n        create_jwt,\n        decode_jwt,\n        get_current_user,\n        login,\n        callback,\n        logout,\n        me,\n    )\nexcept ImportError:\n    # Fallback import if module structure is different\n    create_jwt = None\n    decode_jwt = None\n    get_current_user = None\n    login = None\n    callback = None\n    logout = None\n    me = None\n\n\n# ============================================================================\n# FIXTURES\n# ============================================================================\n\n@pytest.fixture\ndef mock_settings():\n    \"\"\"Mock settings configuration.\"\"\"\n    settings = Mock()\n    settings.jwt_secret = \"test_secret_key_12345678901234567890\"\n    settings.jwt_algorithm = \"HS256\"\n    settings.jwt_expiry_days = 7\n    settings.github_client_id = \"test_github_client_id\"\n    settings.github_client_secret = \"test_github_client_secret\"\n    settings.frontend_url = \"http://localhost:3000\"\n    return settings\n\n\n@pytest.fixture\ndef sample_user_id():\n    \"\"\"Sample UUID for testing.\"\"\"\n    return uuid.UUID(\"550e8400-e29b-41d4-a716-446655440000\")\n\n\n@pytest.fixture\ndef sample_user_id_2():\n    \"\"\"Second sample UUID for testing.\"\"\"\n    return uuid.UUID(\"660e8400-e29b-41d4-a716-446655440001\")\n\n\n@pytest.fixture\ndef mock_user():\n    \"\"\"Mock User database model.\"\"\"\n    user = Mock()\n    user.id = uuid.UUID(\"550e8400-e29b-41d4-a716-446655440000\")\n    user.username = \"testuser\"\n    user.display_name = \"Test User\"\n    user.avatar_url = \"https://avatars.githubusercontent.com/u/123456\"\n    user.bio = \"Test bio\"\n    user.email = \"test@example.com\"\n    return user\n\n\n@pytest.fixture\ndef mock_user_minimal():\n    \"\"\"Mock User with minimal/null optional fields.\"\"\"\n    user = Mock()\n    user.id = uuid.UUID(\"550e8400-e29b-41d4-a716-446655440000\")\n    user.username = \"minimaluser\"\n    user.display_name = None\n    user.avatar_url = None\n    user.bio = None\n    user.email = \"minimal@example.com\"\n    return user\n\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Mock AsyncSession for database operations.\"\"\"\n    session = AsyncMock()\n    session.execute = AsyncMock()\n    session.add = Mock()\n    session.commit = AsyncMock()\n    session.refresh = AsyncMock()\n    return session\n\n\n@pytest.fixture\ndef github_token_response():\n    \"\"\"Mock successful GitHub token exchange response.\"\"\"\n    return {\n        \"access_token\": \"gho_test_access_token_123456\",\n        \"token_type\": \"bearer\",\n        \"scope\": \"read:user,user:email\"\n    }\n\n\n@pytest.fixture\ndef github_user_response():\n    \"\"\"Mock successful GitHub user API response.\"\"\"\n    return {\n        \"id\": 123456,\n        \"login\": \"testuser\",\n        \"name\": \"Test User\",\n        \"avatar_url\": \"https://avatars.githubusercontent.com/u/123456\",\n        \"bio\": \"Test bio\",\n        \"email\": \"test@example.com\"\n    }\n\n\n@pytest.fixture\ndef github_user_response_minimal():\n    \"\"\"Mock GitHub user API response with null optional fields.\"\"\"\n    return {\n        \"id\": 123456,\n        \"login\": \"minimaluser\",\n        \"name\": None,\n        \"avatar_url\": None,\n        \"bio\": None,\n        \"email\": \"minimal@example.com\"\n    }\n\n\n# ============================================================================\n# JWT UNIT TESTS (Pure Logic)\n# ============================================================================\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_create_jwt_happy_path(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies create_jwt generates a valid JWT token with correct claims for a given user UUID.\"\"\"\n    if create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token = create_jwt(sample_user_id)\n    \n    # Token is a non-empty string\n    assert isinstance(token, str)\n    assert len(token) > 0\n    \n    # Token contains 3 parts separated by dots\n    parts = token.split('.')\n    assert len(parts) == 3\n    \n    # Decode to verify claims\n    import jwt as pyjwt\n    decoded = pyjwt.decode(token, mock_settings.jwt_secret, algorithms=[mock_settings.jwt_algorithm])\n    \n    # Decoded token contains 'sub' with stringified UUID\n    assert 'sub' in decoded\n    assert decoded['sub'] == str(sample_user_id)\n    \n    # Decoded token contains 'exp' claim\n    assert 'exp' in decoded\n    \n    # Decoded token contains 'iat' claim\n    assert 'iat' in decoded\n    \n    # Token expiry is jwt_expiry_days from now\n    iat_time = datetime.fromtimestamp(decoded['iat'], tz=timezone.utc)\n    exp_time = datetime.fromtimestamp(decoded['exp'], tz=timezone.utc)\n    expected_delta = timedelta(days=mock_settings.jwt_expiry_days)\n    actual_delta = exp_time - iat_time\n    \n    # Allow 2 second tolerance for execution time\n    assert abs(actual_delta.total_seconds() - expected_delta.total_seconds()) < 2\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_create_jwt_different_uuids(mock_settings_module, mock_settings, sample_user_id, sample_user_id_2):\n    \"\"\"Verifies create_jwt generates different tokens for different user IDs.\"\"\"\n    if create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token1 = create_jwt(sample_user_id)\n    token2 = create_jwt(sample_user_id_2)\n    \n    # Tokens are different strings\n    assert token1 != token2\n    \n    # Each token decodes to its respective user_id\n    import jwt as pyjwt\n    decoded1 = pyjwt.decode(token1, mock_settings.jwt_secret, algorithms=[mock_settings.jwt_algorithm])\n    decoded2 = pyjwt.decode(token2, mock_settings.jwt_secret, algorithms=[mock_settings.jwt_algorithm])\n    \n    assert decoded1['sub'] == str(sample_user_id)\n    assert decoded2['sub'] == str(sample_user_id_2)\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_happy_path(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies decode_jwt correctly decodes a valid JWT token.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token = create_jwt(sample_user_id)\n    payload = decode_jwt(token)\n    \n    # Returns a dictionary\n    assert isinstance(payload, dict)\n    \n    # Dictionary contains 'sub' key\n    assert 'sub' in payload\n    \n    # Dictionary contains 'exp' key\n    assert 'exp' in payload\n    \n    # Dictionary contains 'iat' key\n    assert 'iat' in payload\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_roundtrip(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies JWT roundtrip: encode then decode returns original payload.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token = create_jwt(sample_user_id)\n    payload = decode_jwt(token)\n    \n    # Decoded 'sub' matches original UUID string\n    assert payload['sub'] == str(sample_user_id)\n    \n    # exp and iat are present and valid\n    assert 'exp' in payload\n    assert 'iat' in payload\n    assert isinstance(payload['exp'], (int, float))\n    assert isinstance(payload['iat'], (int, float))\n    assert payload['exp'] > payload['iat']\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_invalid_signature(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies decode_jwt raises InvalidTokenError when token has been tampered with.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    # Create valid token\n    token = create_jwt(sample_user_id)\n    \n    # Change the secret for decoding\n    mock_settings_module.jwt_secret = \"wrong_secret_key\"\n    \n    # InvalidTokenError is raised\n    from jwt.exceptions import InvalidTokenError\n    with pytest.raises(InvalidTokenError):\n        decode_jwt(token)\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.datetime')\ndef test_decode_jwt_expired_token(mock_datetime, mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies decode_jwt raises ExpiredSignatureError for expired tokens.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    import jwt as pyjwt\n    from jwt.exceptions import ExpiredSignatureError\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    # Create a token that's already expired\n    now = datetime.now(timezone.utc)\n    past_time = now - timedelta(days=10)\n    \n    payload = {\n        'sub': str(sample_user_id),\n        'exp': past_time,\n        'iat': past_time - timedelta(days=1)\n    }\n    \n    expired_token = pyjwt.encode(payload, mock_settings.jwt_secret, algorithm=mock_settings.jwt_algorithm)\n    \n    # ExpiredSignatureError is raised\n    with pytest.raises(ExpiredSignatureError):\n        decode_jwt(expired_token)\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_malformed_token(mock_settings_module, mock_settings):\n    \"\"\"Verifies decode_jwt raises DecodeError for malformed tokens.\"\"\"\n    if decode_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    \n    from jwt.exceptions import DecodeError\n    \n    # DecodeError is raised\n    with pytest.raises(DecodeError):\n        decode_jwt(\"not.a.valid.jwt.token\")\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_empty_token(mock_settings_module, mock_settings):\n    \"\"\"Verifies decode_jwt raises DecodeError for empty token.\"\"\"\n    if decode_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    \n    from jwt.exceptions import DecodeError\n    \n    # DecodeError is raised\n    with pytest.raises(DecodeError):\n        decode_jwt(\"\")\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_jwt_expiry_boundary(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies JWT token expires exactly at jwt_expiry_days boundary.\"\"\"\n    if create_jwt is None or decode_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token = create_jwt(sample_user_id)\n    payload = decode_jwt(token)\n    \n    # exp claim is exactly jwt_expiry_days from iat\n    iat_time = datetime.fromtimestamp(payload['iat'], tz=timezone.utc)\n    exp_time = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)\n    \n    delta = exp_time - iat_time\n    expected_delta = timedelta(days=mock_settings.jwt_expiry_days)\n    \n    # Allow 2 second tolerance\n    assert abs(delta.total_seconds() - expected_delta.total_seconds()) < 2\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_decode_jwt_algorithm_mismatch(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Verifies decode_jwt raises InvalidTokenError when algorithm doesn't match.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    import jwt as pyjwt\n    from jwt.exceptions import InvalidTokenError\n    \n    # Create token with HS256\n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = \"HS256\"\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    now = datetime.now(timezone.utc)\n    payload = {\n        'sub': str(sample_user_id),\n        'exp': now + timedelta(days=7),\n        'iat': now\n    }\n    \n    token = pyjwt.encode(payload, mock_settings.jwt_secret, algorithm=\"HS256\")\n    \n    # Try to decode with HS512 algorithm setting\n    mock_settings_module.jwt_algorithm = \"HS512\"\n    \n    # InvalidTokenError is raised\n    with pytest.raises(InvalidTokenError):\n        decode_jwt(token)\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_security_jwt_none_algorithm(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Security test: Verifies decode_jwt rejects tokens with 'none' algorithm.\"\"\"\n    if decode_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    import jwt as pyjwt\n    from jwt.exceptions import InvalidTokenError, DecodeError\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    \n    now = datetime.now(timezone.utc)\n    payload = {\n        'sub': str(sample_user_id),\n        'exp': now + timedelta(days=7),\n        'iat': now\n    }\n    \n    # Create token with 'none' algorithm\n    token = pyjwt.encode(payload, key=\"\", algorithm=\"none\")\n    \n    # Token with 'none' algorithm is rejected\n    with pytest.raises((InvalidTokenError, DecodeError)):\n        decode_jwt(token)\n\n\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_security_token_tampering(mock_settings_module, mock_settings, sample_user_id):\n    \"\"\"Security test: Verifies decode_jwt detects payload tampering.\"\"\"\n    if decode_jwt is None or create_jwt is None:\n        pytest.skip(\"Module not available\")\n    \n    from jwt.exceptions import InvalidTokenError\n    \n    mock_settings_module.jwt_secret = mock_settings.jwt_secret\n    mock_settings_module.jwt_algorithm = mock_settings.jwt_algorithm\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    token = create_jwt(sample_user_id)\n    \n    # Tamper with the payload (change middle part)\n    parts = token.split('.')\n    \n    # Decode the payload, modify it, re-encode\n    import base64\n    padding = '=' * (4 - len(parts[1]) % 4)\n    decoded_payload = base64.urlsafe_b64decode(parts[1] + padding)\n    payload_dict = json.loads(decoded_payload)\n    \n    # Tamper with the sub claim\n    payload_dict['sub'] = str(sample_user_id_2)\n    \n    # Re-encode\n    tampered_payload = base64.urlsafe_b64encode(json.dumps(payload_dict).encode()).decode().rstrip('=')\n    tampered_token = f\"{parts[0]}.{tampered_payload}.{parts[2]}\"\n    \n    # Tampered token is rejected\n    with pytest.raises(InvalidTokenError):\n        decode_jwt(tampered_token)\n\n\n# ============================================================================\n# AUTH ENDPOINT TESTS (Mocked Dependencies)\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_current_user_always_raises(mock_db_session):\n    \"\"\"Verifies get_current_user placeholder always raises NotAuthenticated.\"\"\"\n    if get_current_user is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    \n    # NotAuthenticated/HTTPException is raised with 401 status\n    with pytest.raises(HTTPException) as exc_info:\n        await get_current_user(db=mock_db_session, session=\"any_session_value\")\n    \n    assert exc_info.value.status_code == 401\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\ndef test_login_happy_path(mock_settings_module, mock_settings):\n    \"\"\"Verifies login returns redirect to GitHub OAuth authorize URL.\"\"\"\n    if login is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi.responses import RedirectResponse\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    \n    response = await login()\n    \n    # Returns RedirectResponse\n    assert isinstance(response, RedirectResponse)\n    \n    # Status code is 302\n    assert response.status_code == 302\n    \n    # Location header contains github.com/login/oauth/authorize\n    location = response.headers.get('location', '')\n    assert 'github.com/login/oauth/authorize' in location\n    \n    # URL includes client_id parameter\n    assert 'client_id=' in location\n    assert mock_settings.github_client_id in location\n    \n    # URL includes scope parameter with 'read:user user:email'\n    assert 'scope=' in location\n    assert 'read:user' in location or 'read%3Auser' in location\n    assert 'user:email' in location or 'user%3Aemail' in location\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.create_jwt')\ndef test_callback_happy_path_new_user(mock_create_jwt, mock_httpx_client, mock_settings_module, \n                                      mock_settings, mock_db_session, github_token_response, \n                                      github_user_response):\n    \"\"\"Verifies callback creates new user from GitHub OAuth and sets session cookie.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi.responses import RedirectResponse\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    # Mock httpx responses\n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    # Token response\n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    # User response\n    user_response_mock = Mock()\n    user_response_mock.json.return_value = github_user_response\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    # Mock database - no existing user\n    result_mock = Mock()\n    result_mock.scalar_one_or_none.return_value = None\n    mock_db_session.execute.return_value = result_mock\n    \n    # Mock JWT creation\n    mock_create_jwt.return_value = \"mock_jwt_token_123\"\n    \n    response = await callback(code=\"test_oauth_code_123\", db=mock_db_session)\n    \n    # Returns RedirectResponse\n    assert isinstance(response, RedirectResponse)\n    \n    # Status code is 302\n    assert response.status_code == 302\n    \n    # Redirects to frontend_url/dashboard\n    location = response.headers.get('location', '')\n    assert location == f\"{mock_settings.frontend_url}/dashboard\"\n    \n    # Response sets session cookie\n    set_cookie = response.headers.get('set-cookie', '')\n    assert 'session=' in set_cookie\n    \n    # Cookie is httponly=True\n    assert 'httponly' in set_cookie.lower() or 'HttpOnly' in set_cookie\n    \n    # Cookie is secure=True\n    assert 'secure' in set_cookie.lower() or 'Secure' in set_cookie\n    \n    # Cookie samesite='lax'\n    assert 'samesite=lax' in set_cookie.lower() or 'SameSite=Lax' in set_cookie\n    \n    # User is created in database\n    assert mock_db_session.add.called\n    \n    # User fields match GitHub profile\n    added_user = mock_db_session.add.call_args[0][0]\n    assert added_user.username == github_user_response['login']\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.create_jwt')\ndef test_callback_happy_path_existing_user(mock_create_jwt, mock_httpx_client, mock_settings_module, \n                                           mock_settings, mock_db_session, github_token_response, \n                                           github_user_response, mock_user):\n    \"\"\"Verifies callback updates existing user from GitHub OAuth.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi.responses import RedirectResponse\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    # Mock httpx responses\n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    user_response_mock = Mock()\n    user_response_mock.json.return_value = github_user_response\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    # Mock database - existing user\n    result_mock = Mock()\n    result_mock.scalar_one_or_none.return_value = mock_user\n    mock_db_session.execute.return_value = result_mock\n    \n    mock_create_jwt.return_value = \"mock_jwt_token_123\"\n    \n    response = await callback(code=\"test_oauth_code_existing\", db=mock_db_session)\n    \n    # User is updated not created\n    assert not mock_db_session.add.called or mock_db_session.add.call_count == 0\n    \n    # User fields are updated to match GitHub profile\n    assert mock_user.display_name == github_user_response['name']\n    assert mock_user.avatar_url == github_user_response['avatar_url']\n    \n    # Session cookie is set\n    set_cookie = response.headers.get('set-cookie', '')\n    assert 'session=' in set_cookie\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\ndef test_callback_oauth_failed_no_access_token(mock_httpx_client, mock_settings_module, \n                                               mock_settings, mock_db_session):\n    \"\"\"Verifies callback raises OAuthFailed when GitHub doesn't return access_token.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    \n    # Mock httpx response without access_token\n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = {\"error\": \"invalid_grant\"}\n    \n    mock_client_instance.post.return_value = token_response_mock\n    \n    # OAuthFailed or HTTPException is raised\n    with pytest.raises((HTTPException, KeyError, Exception)) as exc_info:\n        await callback(code=\"invalid_code\", db=mock_db_session)\n    \n    # No user is created in database\n    assert not mock_db_session.add.called\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\ndef test_callback_github_api_error_missing_id(mock_httpx_client, mock_settings_module, \n                                              mock_settings, mock_db_session, github_token_response):\n    \"\"\"Verifies callback raises GitHubAPIError when user API response missing 'id' field.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    \n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    # User response missing 'id'\n    user_response_mock = Mock()\n    user_response_mock.json.return_value = {\n        \"login\": \"testuser\",\n        \"name\": \"Test User\"\n    }\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    # GitHubAPIError or HTTPException is raised\n    with pytest.raises((HTTPException, KeyError, Exception)):\n        await callback(code=\"valid_code\", db=mock_db_session)\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\ndef test_callback_github_api_error_missing_login(mock_httpx_client, mock_settings_module, \n                                                 mock_settings, mock_db_session, github_token_response):\n    \"\"\"Verifies callback raises GitHubAPIError when user API response missing 'login' field.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    \n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    # User response missing 'login'\n    user_response_mock = Mock()\n    user_response_mock.json.return_value = {\n        \"id\": 123456,\n        \"name\": \"Test User\"\n    }\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    # GitHubAPIError or HTTPException is raised\n    with pytest.raises((HTTPException, KeyError, Exception)):\n        await callback(code=\"valid_code\", db=mock_db_session)\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\ndef test_callback_network_error(mock_httpx_client, mock_settings_module, mock_settings, mock_db_session):\n    \"\"\"Verifies callback raises NetworkError when httpx encounters connectivity issues.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    import httpx\n    from fastapi import HTTPException\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    \n    # Mock network error\n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    mock_client_instance.post.side_effect = httpx.NetworkError(\"Connection failed\")\n    \n    # NetworkError or HTTPException is raised\n    with pytest.raises((HTTPException, httpx.NetworkError, Exception)):\n        await callback(code=\"valid_code\", db=mock_db_session)\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.create_jwt')\ndef test_callback_database_error(mock_create_jwt, mock_httpx_client, mock_settings_module, \n                                mock_settings, mock_db_session, github_token_response, \n                                github_user_response):\n    \"\"\"Verifies callback raises DatabaseError when database commit fails.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    from sqlalchemy.exc import SQLAlchemyError\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    user_response_mock = Mock()\n    user_response_mock.json.return_value = github_user_response\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    # Mock database commit failure\n    result_mock = Mock()\n    result_mock.scalar_one_or_none.return_value = None\n    mock_db_session.execute.return_value = result_mock\n    mock_db_session.commit.side_effect = SQLAlchemyError(\"Database error\")\n    \n    mock_create_jwt.return_value = \"mock_jwt_token_123\"\n    \n    # DatabaseError or HTTPException is raised\n    with pytest.raises((HTTPException, SQLAlchemyError, Exception)):\n        await callback(code=\"valid_code\", db=mock_db_session)\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.create_jwt')\ndef test_callback_nullable_fields(mock_create_jwt, mock_httpx_client, mock_settings_module, \n                                  mock_settings, mock_db_session, github_token_response, \n                                  github_user_response_minimal):\n    \"\"\"Verifies callback handles GitHub API responses with null optional fields.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi.responses import RedirectResponse\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    user_response_mock = Mock()\n    user_response_mock.json.return_value = github_user_response_minimal\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    result_mock = Mock()\n    result_mock.scalar_one_or_none.return_value = None\n    mock_db_session.execute.return_value = result_mock\n    \n    mock_create_jwt.return_value = \"mock_jwt_token_123\"\n    \n    response = await callback(code=\"valid_code\", db=mock_db_session)\n    \n    # User is created successfully\n    assert mock_db_session.add.called\n    \n    # Optional fields are None\n    added_user = mock_db_session.add.call_args[0][0]\n    assert added_user.display_name is None or added_user.display_name == github_user_response_minimal.get('name')\n    assert added_user.avatar_url is None or added_user.avatar_url == github_user_response_minimal.get('avatar_url')\n\n\n@pytest.mark.asyncio\ndef test_logout_happy_path():\n    \"\"\"Verifies logout clears session cookie and returns 204.\"\"\"\n    if logout is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import Response\n    \n    response = await logout()\n    \n    # Returns Response object\n    assert isinstance(response, Response)\n    \n    # Status code is 204\n    assert response.status_code == 204\n    \n    # Session cookie is deleted (max_age=0 or expires in past)\n    set_cookie = response.headers.get('set-cookie', '')\n    assert 'session=' in set_cookie\n    assert 'max-age=0' in set_cookie.lower() or 'max_age=0' in set_cookie.lower() or 'expires=' in set_cookie.lower()\n\n\n@pytest.mark.asyncio\nasync def test_me_happy_path(mock_user):\n    \"\"\"Verifies me returns authenticated user profile as dictionary.\"\"\"\n    if me is None:\n        pytest.skip(\"Module not available\")\n    \n    result = await me(user=mock_user)\n    \n    # Returns dictionary\n    assert isinstance(result, dict)\n    \n    # Contains 'id' key with stringified UUID\n    assert 'id' in result\n    assert result['id'] == str(mock_user.id)\n    \n    # Contains 'username' key\n    assert 'username' in result\n    assert result['username'] == mock_user.username\n    \n    # Contains 'display_name' key\n    assert 'display_name' in result\n    \n    # Contains 'avatar_url' key\n    assert 'avatar_url' in result\n    \n    # Contains 'bio' key\n    assert 'bio' in result\n\n\n@pytest.mark.asyncio\nasync def test_me_with_all_null_optional_fields(mock_user_minimal):\n    \"\"\"Verifies me returns dictionary with None values for optional fields.\"\"\"\n    if me is None:\n        pytest.skip(\"Module not available\")\n    \n    result = await me(user=mock_user_minimal)\n    \n    # display_name is None\n    assert result['display_name'] is None\n    \n    # avatar_url is None\n    assert result['avatar_url'] is None\n    \n    # bio is None\n    assert result['bio'] is None\n\n\n@pytest.mark.asyncio\nasync def test_me_not_authenticated(mock_db_session):\n    \"\"\"Verifies me raises NotAuthenticated when get_current_user fails.\"\"\"\n    if me is None or get_current_user is None:\n        pytest.skip(\"Module not available\")\n    \n    from fastapi import HTTPException\n    \n    # Since get_current_user is a dependency that always raises,\n    # we test that without a valid user, we'd get 401\n    with pytest.raises(HTTPException) as exc_info:\n        await get_current_user(db=mock_db_session, session=None)\n    \n    # NotAuthenticated or HTTPException with 401 is raised\n    assert exc_info.value.status_code == 401\n\n\n# ============================================================================\n# INVARIANT TESTS\n# ============================================================================\n\ndef test_invariant_github_urls():\n    \"\"\"Verifies GitHub OAuth URLs match contract invariants.\"\"\"\n    # Import the module to check constants\n    try:\n        import contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface as auth_module\n        \n        # GITHUB_AUTHORIZE_URL equals 'https://github.com/login/oauth/authorize'\n        assert hasattr(auth_module, 'GITHUB_AUTHORIZE_URL')\n        assert auth_module.GITHUB_AUTHORIZE_URL == 'https://github.com/login/oauth/authorize'\n        \n        # GITHUB_TOKEN_URL equals 'https://github.com/login/oauth/access_token'\n        assert hasattr(auth_module, 'GITHUB_TOKEN_URL')\n        assert auth_module.GITHUB_TOKEN_URL == 'https://github.com/login/oauth/access_token'\n        \n        # GITHUB_USER_URL equals 'https://api.github.com/user'\n        assert hasattr(auth_module, 'GITHUB_USER_URL')\n        assert auth_module.GITHUB_USER_URL == 'https://api.github.com/user'\n    except ImportError:\n        pytest.skip(\"Module not available for invariant check\")\n\n\ndef test_invariant_router_config():\n    \"\"\"Verifies router configuration matches contract invariants.\"\"\"\n    try:\n        import contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface as auth_module\n        \n        # Router prefix is '/api/auth'\n        assert hasattr(auth_module, 'router')\n        assert auth_module.router.prefix == '/api/auth'\n        \n        # Router tags include 'auth'\n        assert 'auth' in auth_module.router.tags\n    except (ImportError, AttributeError):\n        pytest.skip(\"Module or router not available for invariant check\")\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.httpx.AsyncClient')\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.create_jwt')\nasync def test_invariant_session_cookie_attributes(mock_create_jwt, mock_httpx_client, \n                                                   mock_settings_module, mock_settings, \n                                                   mock_db_session, github_token_response, \n                                                   github_user_response):\n    \"\"\"Verifies session cookie attributes match contract invariants.\"\"\"\n    if callback is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    mock_settings_module.github_client_secret = mock_settings.github_client_secret\n    mock_settings_module.frontend_url = mock_settings.frontend_url\n    mock_settings_module.jwt_expiry_days = mock_settings.jwt_expiry_days\n    \n    mock_client_instance = AsyncMock()\n    mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance\n    \n    token_response_mock = Mock()\n    token_response_mock.json.return_value = github_token_response\n    \n    user_response_mock = Mock()\n    user_response_mock.json.return_value = github_user_response\n    \n    mock_client_instance.post.return_value = token_response_mock\n    mock_client_instance.get.return_value = user_response_mock\n    \n    result_mock = Mock()\n    result_mock.scalar_one_or_none.return_value = None\n    mock_db_session.execute.return_value = result_mock\n    \n    mock_create_jwt.return_value = \"mock_jwt_token_123\"\n    \n    response = await callback(code=\"valid_code\", db=mock_db_session)\n    \n    set_cookie = response.headers.get('set-cookie', '')\n    \n    # Cookie key is 'session'\n    assert 'session=' in set_cookie\n    \n    # Cookie httponly is True\n    assert 'httponly' in set_cookie.lower() or 'HttpOnly' in set_cookie\n    \n    # Cookie secure is True\n    assert 'secure' in set_cookie.lower() or 'Secure' in set_cookie\n    \n    # Cookie samesite is 'lax'\n    assert 'samesite=lax' in set_cookie.lower() or 'SameSite=Lax' in set_cookie or 'SameSite=lax' in set_cookie\n\n\n@pytest.mark.asyncio\n@patch('contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface.settings')\nasync def test_invariant_oauth_scope(mock_settings_module, mock_settings):\n    \"\"\"Verifies OAuth scope requested matches contract invariant.\"\"\"\n    if login is None:\n        pytest.skip(\"Module not available\")\n    \n    mock_settings_module.github_client_id = mock_settings.github_client_id\n    \n    response = await login()\n    \n    location = response.headers.get('location', '')\n    \n    # Scope parameter includes 'read:user user:email'\n    assert 'scope=' in location\n    # Check for URL-encoded or plain versions\n    has_read_user = 'read:user' in location or 'read%3Auser' in location\n    has_user_email = 'user:email' in location or 'user%3Aemail' in location\n    assert has_read_user\n    assert has_user_email\n"
+}

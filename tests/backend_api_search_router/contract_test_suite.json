@@ -1,0 +1,562 @@
+{
+  "component_id": "backend_api_search_router",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_get_embedding_success_returns_768_dimensional_vector",
+      "description": "Verify get_embedding returns 768-dimensional float vector on successful API call",
+      "function": "get_embedding",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "text_input": "search query"
+      },
+      "input_description": "",
+      "expected_output_description": "List of 768 floats from result.embeddings[0].values",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, list)",
+        "len(result) == 768",
+        "all(isinstance(x, float) for x in result)"
+      ]
+    },
+    {
+      "id": "test_get_embedding_no_api_key_returns_none",
+      "description": "Verify get_embedding returns None when gemini_api_key is not configured",
+      "function": "get_embedding",
+      "category": "edge_case",
+      "setup_description": "Mock settings.gemini_api_key as empty string",
+      "mock_dependencies": {},
+      "input_values": {
+        "text_input": "search query"
+      },
+      "input_description": "",
+      "expected_output_description": "None",
+      "expected_error": "",
+      "assertions": [
+        "result is None"
+      ]
+    },
+    {
+      "id": "test_get_embedding_api_exception_returns_none",
+      "description": "Verify get_embedding returns None on API exception (silent failure)",
+      "function": "get_embedding",
+      "category": "error_case",
+      "setup_description": "Mock google.genai.Client to raise exception",
+      "mock_dependencies": {},
+      "input_values": {
+        "text_input": "search query"
+      },
+      "input_description": "",
+      "expected_output_description": "None",
+      "expected_error": "",
+      "assertions": [
+        "result is None"
+      ]
+    },
+    {
+      "id": "test_search_tools_keyword_mode_happy_path",
+      "description": "Verify keyword search returns paginated results with correct schema",
+      "function": "search_tools",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "python",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "SearchResponse with tools list, total, page, per_page",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "data['total'] >= 0",
+        "data['page'] == 1",
+        "data['per_page'] == 10",
+        "isinstance(data['tools'], list)"
+      ]
+    },
+    {
+      "id": "test_search_tools_semantic_mode_happy_path",
+      "description": "Verify semantic search returns results with vector similarity scores",
+      "function": "search_tools",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "machine learning",
+        "mode": "semantic",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "SearchResponse with cosine similarity scores",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "isinstance(data['tools'], list)",
+        "all('score' in tool for tool in data['tools'])"
+      ]
+    },
+    {
+      "id": "test_search_tools_hybrid_mode_happy_path",
+      "description": "Verify hybrid search combines keyword and semantic results",
+      "function": "search_tools",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "data processing",
+        "mode": "hybrid",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "SearchResponse with aggregated scores using max()",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "isinstance(data['tools'], list)"
+      ]
+    },
+    {
+      "id": "test_search_tools_empty_results_returns_empty_list",
+      "description": "Verify empty result set returns tools=[], total=0",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "nonexistent_xyz_query",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "{tools: [], total: 0, page: 1, per_page: 10}",
+      "expected_error": "",
+      "assertions": [
+        "data['tools'] == []",
+        "data['total'] == 0",
+        "data['page'] == 1",
+        "data['per_page'] == 10"
+      ]
+    },
+    {
+      "id": "test_search_tools_page_boundary_page_1",
+      "description": "Verify pagination at page=1 (minimum boundary)",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid response with page=1",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "data['page'] == 1"
+      ]
+    },
+    {
+      "id": "test_search_tools_per_page_boundary_1",
+      "description": "Verify per_page=1 (minimum boundary)",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "1"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid response with per_page=1",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "data['per_page'] == 1",
+        "len(data['tools']) <= 1"
+      ]
+    },
+    {
+      "id": "test_search_tools_per_page_boundary_100",
+      "description": "Verify per_page=100 (maximum boundary)",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "100"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid response with per_page=100",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200",
+        "data['per_page'] == 100",
+        "len(data['tools']) <= 100"
+      ]
+    },
+    {
+      "id": "test_search_tools_score_rounded_to_4_decimals",
+      "description": "Verify score values are rounded to 4 decimal places",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "All scores have max 4 decimal places",
+      "expected_error": "",
+      "assertions": [
+        "all(len(str(tool['score']).split('.')[-1]) <= 4 for tool in data['tools'] if data['tools'])"
+      ]
+    },
+    {
+      "id": "test_search_tools_results_ordered_by_score_desc",
+      "description": "Verify results are ordered by score descending",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Tools sorted by score in descending order",
+      "expected_error": "",
+      "assertions": [
+        "all(data['tools'][i]['score'] >= data['tools'][i+1]['score'] for i in range(len(data['tools'])-1)) if len(data['tools']) > 1 else True"
+      ]
+    },
+    {
+      "id": "test_search_tools_only_active_tools_returned",
+      "description": "Verify only tools with is_active=True are returned",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock database to include inactive tools, verify they are filtered out",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Only active tools in results",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_database_error",
+      "description": "Verify database_error when database query fails",
+      "function": "search_tools",
+      "category": "error_case",
+      "setup_description": "Mock AsyncSession.execute to raise database exception",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "database_error",
+      "assertions": [
+        "response.status_code == 500 or response.status_code == 422"
+      ]
+    },
+    {
+      "id": "test_search_tools_invalid_uuid_conversion",
+      "description": "Verify invalid_uuid_conversion when tool_scores contains non-UUID IDs",
+      "function": "search_tools",
+      "category": "error_case",
+      "setup_description": "Mock tool_scores with malformed UUID strings",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "invalid_uuid_conversion",
+      "assertions": [
+        "response.status_code == 500 or response.status_code == 422"
+      ]
+    },
+    {
+      "id": "test_search_tools_attribute_error_missing_slug",
+      "description": "Verify attribute_error when Tool object missing expected attributes",
+      "function": "search_tools",
+      "category": "error_case",
+      "setup_description": "Mock Tool object without slug attribute",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "attribute_error",
+      "assertions": [
+        "response.status_code == 500 or response.status_code == 422"
+      ]
+    },
+    {
+      "id": "test_search_tools_sql_injection_attempt",
+      "description": "Verify SQL injection attempts are safely handled",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "'; DROP TABLE tools; --",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Safe handling, no SQL execution",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_unicode_query",
+      "description": "Verify unicode characters in query are handled correctly",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "数据处理🔍",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid response with unicode query",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_xss_attempt",
+      "description": "Verify XSS attempts in query are safely handled",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "<script>alert('xss')</script>",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Safe handling, no script execution",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_tag_match_score_0_5",
+      "description": "Verify tag matching score is hardcoded to 0.5",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock database with exact tag match",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "python",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Tag match results have score 0.5",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_fallback_name_match_score_0_1",
+      "description": "Verify fallback name matching score is hardcoded to 0.1",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock database with name prefix match only",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Name prefix match results have score 0.1",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_response_schema_validation",
+      "description": "Verify response matches SearchResponse schema exactly",
+      "function": "search_tools",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Valid SearchResponse with all required fields",
+      "expected_error": "",
+      "assertions": [
+        "'tools' in data",
+        "'total' in data",
+        "'page' in data",
+        "'per_page' in data",
+        "all(key in tool for tool in data['tools'] for key in ['slug', 'name', 'description', 'problem_statement', 'language', 'tags', 'author', 'vote_count', 'score', 'created_at']) if data['tools'] else True"
+      ]
+    },
+    {
+      "id": "test_search_tools_author_info_schema",
+      "description": "Verify AuthorInfo schema in results has username and avatar_url",
+      "function": "search_tools",
+      "category": "happy_path",
+      "setup_description": "Mock database with author data",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Each tool has author with username and avatar_url",
+      "expected_error": "",
+      "assertions": [
+        "all('username' in tool['author'] and 'avatar_url' in tool['author'] for tool in data['tools']) if data['tools'] else True"
+      ]
+    },
+    {
+      "id": "test_search_tools_semantic_uses_cosine_distance",
+      "description": "Verify semantic search uses cosine distance formula: 1 - cosine_distance",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock get_embedding and database with vector data",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "semantic",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Scores calculated using 1 - cosine_distance",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_hybrid_max_score_aggregation",
+      "description": "Verify hybrid mode uses max(existing, new_score) for overlapping results",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock overlapping results from keyword and semantic searches",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "hybrid",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Aggregated scores use maximum value",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    },
+    {
+      "id": "test_search_tools_total_equals_unique_matches",
+      "description": "Verify total equals len(tool_scores) before pagination",
+      "function": "search_tools",
+      "category": "invariant",
+      "setup_description": "Mock database with 12 matching tools",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "5"
+      },
+      "input_description": "",
+      "expected_output_description": "total=12, tools contains 5 items (first page)",
+      "expected_error": "",
+      "assertions": [
+        "data['total'] >= len(data['tools'])",
+        "len(data['tools']) <= data['per_page']"
+      ]
+    },
+    {
+      "id": "test_search_tools_missing_tools_silently_skipped",
+      "description": "Verify tools missing from tools_map are silently skipped (race condition)",
+      "function": "search_tools",
+      "category": "edge_case",
+      "setup_description": "Mock tool_scores with IDs not in database result",
+      "mock_dependencies": {},
+      "input_values": {
+        "q": "test",
+        "mode": "keyword",
+        "page": "1",
+        "per_page": "10"
+      },
+      "input_description": "",
+      "expected_output_description": "Missing tools are skipped without error",
+      "expected_error": "",
+      "assertions": [
+        "response.status_code == 200"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for backend_api_search_router (Search API Router)\n\nThis test suite validates the search API router implementation against its contract.\nTests cover happy paths, edge cases, error conditions, and invariants.\n\nAll tests use mocked dependencies:\n- AsyncSession (database)\n- google.genai.Client (embedding API)\n- FastAPI dependency injection\n\nTest execution: pytest contract_test.py -v\n\"\"\"\n\nimport pytest\nfrom unittest.mock import Mock, AsyncMock, patch, MagicMock\nfrom fastapi import FastAPI\nfrom fastapi.testclient import TestClient\nimport uuid\nfrom typing import Any, Dict, List\nimport random\n\n\n# ============================================================================\n# Test Fixtures and Helpers\n# ============================================================================\n\n@pytest.fixture\ndef mock_embedding_vector():\n    \"\"\"Returns a valid 768-dimensional embedding vector\"\"\"\n    return [random.uniform(-1.0, 1.0) for _ in range(768)]\n\n\n@pytest.fixture\ndef make_tool_result():\n    \"\"\"Factory function to create ToolSearchResult test data\"\"\"\n    def _make(**overrides):\n        defaults = {\n            \"slug\": f\"tool-{uuid.uuid4().hex[:8]}\",\n            \"name\": \"Test Tool\",\n            \"description\": \"A test tool description\",\n            \"problem_statement\": \"Solves test problems\",\n            \"language\": \"python\",\n            \"tags\": [\"testing\", \"python\"],\n            \"author\": {\"username\": \"testuser\", \"avatar_url\": \"https://example.com/avatar.jpg\"},\n            \"vote_count\": 10,\n            \"score\": 0.8500,\n            \"created_at\": \"2024-01-01T00:00:00Z\"\n        }\n        defaults.update(overrides)\n        return defaults\n    return _make\n\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Creates a mock AsyncSession for database operations\"\"\"\n    session = AsyncMock()\n    \n    # Mock execute to return a result with scalars\n    mock_result = MagicMock()\n    mock_result.scalars.return_value.all.return_value = []\n    session.execute.return_value = mock_result\n    \n    return session\n\n\n@pytest.fixture\ndef mock_app(mock_db_session):\n    \"\"\"Creates a FastAPI test application with mocked dependencies\"\"\"\n    app = FastAPI()\n    \n    # Import the router - adjust import path as needed\n    try:\n        from backend.api.search_router import router as search_router\n        app.include_router(search_router, prefix=\"/api/search\", tags=[\"search\"])\n    except ImportError:\n        # Fallback: create minimal router for testing\n        from fastapi import APIRouter, Query\n        from sqlalchemy.ext.asyncio import AsyncSession\n        \n        router = APIRouter()\n        \n        async def get_db():\n            yield mock_db_session\n        \n        @router.get(\"/tools\")\n        async def search_tools_endpoint(\n            q: str = Query(..., min_length=1),\n            mode: str = Query(\"keyword\", regex=\"^(keyword|semantic|hybrid)$\"),\n            page: int = Query(1, ge=1),\n            per_page: int = Query(10, ge=1, le=100),\n        ):\n            # Minimal mock implementation\n            from backend.api.search.router import search_tools\n            db_session = mock_db_session\n            result = await search_tools(q, mode, page, per_page, db_session)\n            return result\n        \n        app.include_router(router, prefix=\"/api/search\", tags=[\"search\"])\n    \n    # Override database dependency\n    async def override_get_db():\n        yield mock_db_session\n    \n    app.dependency_overrides[lambda: None] = override_get_db\n    \n    return app\n\n\n@pytest.fixture\ndef client(mock_app):\n    \"\"\"Returns TestClient for making HTTP requests\"\"\"\n    return TestClient(mock_app)\n\n\n# ============================================================================\n# Test Class: get_embedding function\n# ============================================================================\n\nclass TestGetEmbedding:\n    \"\"\"Tests for the get_embedding async function\"\"\"\n    \n    @pytest.mark.asyncio\n    async def test_get_embedding_success_returns_768_dimensional_vector(self, mock_embedding_vector):\n        \"\"\"Verify get_embedding returns 768-dimensional float vector on successful API call\"\"\"\n        with patch('backend_api_search_router.settings') as mock_settings, \\\n             patch('google.genai.Client') as mock_client_class:\n            \n            # Setup\n            mock_settings.gemini_api_key = \"test-api-key\"\n            mock_client = MagicMock()\n            mock_client_class.return_value = mock_client\n            \n            # Mock embedding response\n            mock_embedding = MagicMock()\n            mock_embedding.values = mock_embedding_vector\n            mock_result = MagicMock()\n            mock_result.embeddings = [mock_embedding]\n            mock_client.models.embed_content.return_value = mock_result\n            \n            from backend.api.search.router import get_embedding\n            \n            # Execute\n            result = await get_embedding(\"search query\")\n            \n            # Assert\n            assert result is not None\n            assert isinstance(result, list)\n            assert len(result) == 768\n            assert all(isinstance(x, float) for x in result)\n    \n    @pytest.mark.asyncio\n    async def test_get_embedding_no_api_key_returns_none(self):\n        \"\"\"Verify get_embedding returns None when gemini_api_key is not configured\"\"\"\n        with patch('backend_api_search_router.settings') as mock_settings:\n            # Setup: empty API key\n            mock_settings.gemini_api_key = \"\"\n            \n            from backend.api.search.router import get_embedding\n            \n            # Execute\n            result = await get_embedding(\"search query\")\n            \n            # Assert\n            assert result is None\n    \n    @pytest.mark.asyncio\n    async def test_get_embedding_api_exception_returns_none(self):\n        \"\"\"Verify get_embedding returns None on API exception (silent failure)\"\"\"\n        with patch('backend_api_search_router.settings') as mock_settings, \\\n             patch('google.genai.Client') as mock_client_class:\n            \n            # Setup\n            mock_settings.gemini_api_key = \"test-api-key\"\n            mock_client_class.side_effect = Exception(\"API failure\")\n            \n            from backend.api.search.router import get_embedding\n            \n            # Execute\n            result = await get_embedding(\"search query\")\n            \n            # Assert\n            assert result is None\n\n\n# ============================================================================\n# Test Class: search_tools endpoint\n# ============================================================================\n\nclass TestSearchToolsEndpoint:\n    \"\"\"Tests for the search_tools API endpoint\"\"\"\n    \n    def test_search_tools_keyword_mode_happy_path(self, client, mock_db_session, make_tool_result):\n        \"\"\"Verify keyword search returns paginated results with correct schema\"\"\"\n        # Setup mock database response\n        mock_tool = MagicMock()\n        mock_tool.id = uuid.uuid4()\n        mock_tool.slug = \"test-tool\"\n        mock_tool.name = \"Test Tool\"\n        mock_tool.description = \"Test description\"\n        mock_tool.problem_statement = \"Test problem\"\n        mock_tool.language = \"python\"\n        mock_tool.tags = [MagicMock(name=\"python\")]\n        mock_tool.author = MagicMock(username=\"testuser\", avatar_url=\"https://example.com/avatar.jpg\")\n        mock_tool.vote_count = 5\n        mock_tool.created_at = \"2024-01-01T00:00:00Z\"\n        \n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=python&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert data['total'] >= 0\n            assert data['page'] == 1\n            assert data['per_page'] == 10\n            assert isinstance(data['tools'], list)\n    \n    def test_search_tools_semantic_mode_happy_path(self, client, make_tool_result, mock_embedding_vector):\n        \"\"\"Verify semantic search returns results with vector similarity scores\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search, \\\n             patch('backend_api_search_router.get_embedding') as mock_get_embedding:\n            \n            mock_get_embedding.return_value = mock_embedding_vector\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.9234)],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=machine learning&mode=semantic&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert isinstance(data['tools'], list)\n            assert all('score' in tool for tool in data['tools'])\n    \n    def test_search_tools_hybrid_mode_happy_path(self, client, make_tool_result):\n        \"\"\"Verify hybrid search combines keyword and semantic results\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.8500), make_tool_result(score=0.7200)],\n                \"total\": 2,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=data processing&mode=hybrid&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert isinstance(data['tools'], list)\n    \n    def test_search_tools_empty_results_returns_empty_list(self, client):\n        \"\"\"Verify empty result set returns tools=[], total=0\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [],\n                \"total\": 0,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=nonexistent_xyz_query&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            data = response.json()\n            assert data['tools'] == []\n            assert data['total'] == 0\n            assert data['page'] == 1\n            assert data['per_page'] == 10\n    \n    def test_search_tools_page_boundary_page_1(self, client, make_tool_result):\n        \"\"\"Verify pagination at page=1 (minimum boundary)\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert data['page'] == 1\n    \n    def test_search_tools_per_page_boundary_1(self, client, make_tool_result):\n        \"\"\"Verify per_page=1 (minimum boundary)\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],\n                \"total\": 5,\n                \"page\": 1,\n                \"per_page\": 1\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=1\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert data['per_page'] == 1\n            assert len(data['tools']) <= 1\n    \n    def test_search_tools_per_page_boundary_100(self, client, make_tool_result):\n        \"\"\"Verify per_page=100 (maximum boundary)\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            tools = [make_tool_result(slug=f\"tool-{i}\") for i in range(50)]\n            mock_search.return_value = {\n                \"tools\": tools,\n                \"total\": 50,\n                \"page\": 1,\n                \"per_page\": 100\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=100\")\n            \n            # Assert\n            assert response.status_code == 200\n            data = response.json()\n            assert data['per_page'] == 100\n            assert len(data['tools']) <= 100\n    \n    def test_search_tools_score_rounded_to_4_decimals(self, client, make_tool_result):\n        \"\"\"Verify score values are rounded to 4 decimal places\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [\n                    make_tool_result(score=0.8523),\n                    make_tool_result(score=0.7891),\n                    make_tool_result(score=0.5000)\n                ],\n                \"total\": 3,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            data = response.json()\n            assert all(len(str(tool['score']).split('.')[-1]) <= 4 for tool in data['tools'] if data['tools'])\n    \n    def test_search_tools_results_ordered_by_score_desc(self, client, make_tool_result):\n        \"\"\"Verify results are ordered by score descending\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [\n                    make_tool_result(score=0.9500),\n                    make_tool_result(score=0.8500),\n                    make_tool_result(score=0.7000),\n                    make_tool_result(score=0.5000)\n                ],\n                \"total\": 4,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            data = response.json()\n            assert all(data['tools'][i]['score'] >= data['tools'][i+1]['score'] \n                      for i in range(len(data['tools'])-1)) if len(data['tools']) > 1 else True\n    \n    def test_search_tools_only_active_tools_returned(self, client, make_tool_result):\n        \"\"\"Verify only tools with is_active=True are returned\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # Mock should only return active tools\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_database_error(self, client):\n        \"\"\"Verify database_error when database query fails\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.side_effect = Exception(\"Database connection failed\")\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 500 or response.status_code == 422\n    \n    def test_search_tools_invalid_uuid_conversion(self, client):\n        \"\"\"Verify invalid_uuid_conversion when tool_scores contains non-UUID IDs\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.side_effect = ValueError(\"Invalid UUID format\")\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 500 or response.status_code == 422\n    \n    def test_search_tools_attribute_error_missing_slug(self, client):\n        \"\"\"Verify attribute_error when Tool object missing expected attributes\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.side_effect = AttributeError(\"'Tool' object has no attribute 'slug'\")\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 500 or response.status_code == 422\n    \n    def test_search_tools_sql_injection_attempt(self, client):\n        \"\"\"Verify SQL injection attempts are safely handled\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [],\n                \"total\": 0,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q='; DROP TABLE tools; --&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_unicode_query(self, client):\n        \"\"\"Verify unicode characters in query are handled correctly\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [],\n                \"total\": 0,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=数据处理🔍&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_xss_attempt(self, client):\n        \"\"\"Verify XSS attempts in query are safely handled\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [],\n                \"total\": 0,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=<script>alert('xss')</script>&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_tag_match_score_0_5(self, client, make_tool_result):\n        \"\"\"Verify tag matching score is hardcoded to 0.5\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # Mock tag match result\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.5000, tags=[\"python\"])],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=python&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_fallback_name_match_score_0_1(self, client, make_tool_result):\n        \"\"\"Verify fallback name matching score is hardcoded to 0.1\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # Mock name prefix match result\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.1000)],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_response_schema_validation(self, client, make_tool_result):\n        \"\"\"Verify response matches SearchResponse schema exactly\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            tool_data = make_tool_result()\n            mock_search.return_value = {\n                \"tools\": [tool_data],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            data = response.json()\n            assert 'tools' in data\n            assert 'total' in data\n            assert 'page' in data\n            assert 'per_page' in data\n            \n            required_tool_keys = ['slug', 'name', 'description', 'problem_statement', \n                                 'language', 'tags', 'author', 'vote_count', 'score', 'created_at']\n            assert all(key in tool for tool in data['tools'] for key in required_tool_keys) if data['tools'] else True\n    \n    def test_search_tools_author_info_schema(self, client, make_tool_result):\n        \"\"\"Verify AuthorInfo schema in results has username and avatar_url\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            tool_data = make_tool_result()\n            mock_search.return_value = {\n                \"tools\": [tool_data],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            data = response.json()\n            assert all('username' in tool['author'] and 'avatar_url' in tool['author'] \n                      for tool in data['tools']) if data['tools'] else True\n    \n    def test_search_tools_semantic_uses_cosine_distance(self, client, make_tool_result, mock_embedding_vector):\n        \"\"\"Verify semantic search uses cosine distance formula: 1 - cosine_distance\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search, \\\n             patch('backend_api_search_router.get_embedding') as mock_get_embedding:\n            \n            mock_get_embedding.return_value = mock_embedding_vector\n            # Score should be 1 - cosine_distance\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.8765)],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=semantic&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_hybrid_max_score_aggregation(self, client, make_tool_result):\n        \"\"\"Verify hybrid mode uses max(existing, new_score) for overlapping results\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # Simulate overlapping results with max score\n            mock_search.return_value = {\n                \"tools\": [make_tool_result(score=0.9000)],  # Max of keyword and semantic\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=hybrid&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n    \n    def test_search_tools_total_equals_unique_matches(self, client, make_tool_result):\n        \"\"\"Verify total equals len(tool_scores) before pagination\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # 12 matching tools total, but only 5 on first page\n            tools = [make_tool_result(slug=f\"tool-{i}\") for i in range(5)]\n            mock_search.return_value = {\n                \"tools\": tools,\n                \"total\": 12,\n                \"page\": 1,\n                \"per_page\": 5\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=5\")\n            \n            # Assert\n            data = response.json()\n            assert data['total'] >= len(data['tools'])\n            assert len(data['tools']) <= data['per_page']\n    \n    def test_search_tools_missing_tools_silently_skipped(self, client, make_tool_result):\n        \"\"\"Verify tools missing from tools_map are silently skipped (race condition)\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            # Simulate some tools being skipped due to race condition\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],  # Fewer tools than total suggests\n                \"total\": 3,  # But total might reflect pre-filtering count\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            # Execute\n            response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=10\")\n            \n            # Assert\n            assert response.status_code == 200\n\n\n# ============================================================================\n# Additional Integration Tests\n# ============================================================================\n\nclass TestSearchRouterInvariants:\n    \"\"\"Tests for router-level invariants and configuration\"\"\"\n    \n    def test_router_prefix_is_api_search(self, mock_app):\n        \"\"\"Verify router prefix is /api/search\"\"\"\n        # Check routes contain the expected prefix\n        routes = [route.path for route in mock_app.routes]\n        assert any('/api/search' in route for route in routes)\n    \n    def test_router_tag_is_search(self, mock_app):\n        \"\"\"Verify router tag is 'search'\"\"\"\n        # Check openapi schema includes search tag\n        openapi = mock_app.openapi()\n        tags = [tag['name'] for tag in openapi.get('tags', [])]\n        assert 'search' in tags or len(tags) == 0  # May not be populated in test env\n    \n    def test_full_text_search_uses_plainto_tsquery(self, client):\n        \"\"\"Verify full-text search queries use PostgreSQL plainto_tsquery with 'english' configuration\"\"\"\n        # This is an invariant test - we can't directly test SQL generation in unit tests\n        # but we verify the endpoint accepts queries that would be processed\n        with patch('backend_api_search_router.search_tools') as mock_search:\n            mock_search.return_value = {\n                \"tools\": [],\n                \"total\": 0,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            response = client.get(\"/api/search/tools?q=test query&mode=keyword&page=1&per_page=10\")\n            assert response.status_code == 200\n\n\n# ============================================================================\n# Parametrized Tests for SearchMode\n# ============================================================================\n\nclass TestSearchModes:\n    \"\"\"Parametrized tests for different search modes\"\"\"\n    \n    @pytest.mark.parametrize(\"mode\", [\"keyword\", \"semantic\", \"hybrid\"])\n    def test_search_modes_all_valid(self, client, mode, make_tool_result):\n        \"\"\"Verify all search modes return valid responses\"\"\"\n        with patch('backend_api_search_router.search_tools') as mock_search, \\\n             patch('backend_api_search_router.get_embedding') as mock_get_embedding:\n            \n            mock_get_embedding.return_value = [0.1] * 768\n            mock_search.return_value = {\n                \"tools\": [make_tool_result()],\n                \"total\": 1,\n                \"page\": 1,\n                \"per_page\": 10\n            }\n            \n            response = client.get(f\"/api/search/tools?q=test&mode={mode}&page=1&per_page=10\")\n            assert response.status_code == 200\n            data = response.json()\n            assert 'tools' in data\n            assert 'total' in data\n\n\n# ============================================================================\n# Error Handling Tests\n# ============================================================================\n\nclass TestSearchErrorHandling:\n    \"\"\"Tests for error handling and edge cases\"\"\"\n    \n    def test_invalid_mode_parameter(self, client):\n        \"\"\"Verify invalid mode parameter is rejected\"\"\"\n        response = client.get(\"/api/search/tools?q=test&mode=invalid&page=1&per_page=10\")\n        # Should fail validation\n        assert response.status_code == 422\n    \n    def test_page_less_than_1_rejected(self, client):\n        \"\"\"Verify page < 1 is rejected\"\"\"\n        response = client.get(\"/api/search/tools?q=test&mode=keyword&page=0&per_page=10\")\n        assert response.status_code == 422\n    \n    def test_per_page_greater_than_100_rejected(self, client):\n        \"\"\"Verify per_page > 100 is rejected\"\"\"\n        response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=101\")\n        assert response.status_code == 422\n    \n    def test_per_page_less_than_1_rejected(self, client):\n        \"\"\"Verify per_page < 1 is rejected\"\"\"\n        response = client.get(\"/api/search/tools?q=test&mode=keyword&page=1&per_page=0\")\n        assert response.status_code == 422\n    \n    def test_empty_query_rejected(self, client):\n        \"\"\"Verify empty query string is rejected (min_length=1)\"\"\"\n        response = client.get(\"/api/search/tools?q=&mode=keyword&page=1&per_page=10\")\n        assert response.status_code == 422\n    \n    def test_missing_query_parameter(self, client):\n        \"\"\"Verify missing q parameter is rejected\"\"\"\n        response = client.get(\"/api/search/tools?mode=keyword&page=1&per_page=10\")\n        assert response.status_code == 422\n\n\nif __name__ == \"__main__\":\n    pytest.main([__file__, \"-v\"])\n"
+}

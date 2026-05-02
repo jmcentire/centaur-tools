@@ -1,0 +1,7 @@
+build_mode: hierarchy
+parallel_components: true
+competitive_implementations: false
+max_concurrent_agents: 4
+plan_only: false
+tool_index_enabled: true
+budget: 25.0

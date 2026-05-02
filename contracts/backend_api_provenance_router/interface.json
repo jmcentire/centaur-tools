@@ -1,0 +1,683 @@
+{
+  "component_id": "backend_api_provenance_router",
+  "name": "Prior Art Provenance Router",
+  "description": "FastAPI router implementing community-driven prior art nomination and voting for AI tools. Manages nominations claiming tools as prior art for platform features, with vote-based confirmation thresholds and author notifications.",
+  "version": 1,
+  "types": [
+    {
+      "name": "NominationRequest",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "tool_slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Unique slug identifier for the tool",
+          "validators": []
+        },
+        {
+          "name": "platform",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Platform name that implemented the feature",
+          "validators": []
+        },
+        {
+          "name": "platform_feature",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Specific feature that the tool predates",
+          "validators": []
+        },
+        {
+          "name": "evidence",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Evidence supporting the prior art claim",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Request body for nominating a tool as prior art",
+      "owner_component": ""
+    },
+    {
+      "name": "PriorArtListResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "prior_art",
+          "type_ref": "list[PriorArtItem]",
+          "required": true,
+          "default": "",
+          "description": "Array of confirmed prior art nominations",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response containing list of confirmed prior art nominations",
+      "owner_component": ""
+    },
+    {
+      "name": "PriorArtItem",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID of the nomination as string",
+          "validators": []
+        },
+        {
+          "name": "tool",
+          "type_ref": "ToolInfo",
+          "required": true,
+          "default": "",
+          "description": "Tool information",
+          "validators": []
+        },
+        {
+          "name": "platform",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "platform_feature",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "evidence",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "nominated_by",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Username of nominator",
+          "validators": []
+        },
+        {
+          "name": "confirmed_at",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "ISO format timestamp or None",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Individual prior art nomination item",
+      "owner_component": ""
+    },
+    {
+      "name": "ToolInfo",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Embedded tool information",
+      "owner_component": ""
+    },
+    {
+      "name": "PendingListResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "pending",
+          "type_ref": "list[PendingItem]",
+          "required": true,
+          "default": "",
+          "description": "Array of pending nominations",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response containing list of pending nominations",
+      "owner_component": ""
+    },
+    {
+      "name": "PendingItem",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "tool",
+          "type_ref": "ToolInfo",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "platform",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "platform_feature",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "evidence",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "nominated_by",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "threshold",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Vote threshold from settings",
+          "validators": []
+        },
+        {
+          "name": "created_at",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "ISO format timestamp",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Individual pending nomination item",
+      "owner_component": ""
+    },
+    {
+      "name": "NominationResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID of created nomination",
+          "validators": []
+        },
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Always 'nominated'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response after creating a nomination",
+      "owner_component": ""
+    },
+    {
+      "name": "VoteResponse",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "status",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "'voted', 'already_confirmed', or 'already_voted'",
+          "validators": []
+        },
+        {
+          "name": "vote_count",
+          "type_ref": "int",
+          "required": false,
+          "default": "",
+          "description": "Present when status is 'voted'",
+          "validators": []
+        },
+        {
+          "name": "confirmed",
+          "type_ref": "bool",
+          "required": false,
+          "default": "",
+          "description": "Present when status is 'voted'",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Response after voting on a nomination",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "list_prior_art",
+      "description": "Retrieves all confirmed prior art nominations with tool, nominator, and vote information, ordered by confirmation date descending",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by FastAPI dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "PriorArtListResponse",
+      "error_cases": [],
+      "preconditions": [
+        "Database session is active and connected"
+      ],
+      "postconditions": [
+        "Returns dictionary with 'prior_art' key containing list of confirmed nominations",
+        "Each nomination includes tool (slug, name), platform, platform_feature, evidence, nominator username, confirmed_at ISO timestamp, and vote count",
+        "Results ordered by confirmed_at descending"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes SELECT query on PriorArtNomination table with WHERE confirmed == True",
+        "Eager loads related tool and nominator entities via selectinload"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Reads from PriorArtNomination, Tool, User tables"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "list_pending",
+      "description": "Retrieves all unconfirmed prior art nominations with tool, nominator, votes, and threshold information, ordered by creation date descending",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by FastAPI dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "PendingListResponse",
+      "error_cases": [],
+      "preconditions": [
+        "Database session is active and connected",
+        "settings.prior_art_vote_threshold is configured"
+      ],
+      "postconditions": [
+        "Returns dictionary with 'pending' key containing list of unconfirmed nominations",
+        "Each nomination includes tool, platform, platform_feature, evidence, nominator username, vote count, threshold from settings, and created_at ISO timestamp",
+        "Results ordered by created_at descending"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Executes SELECT query on PriorArtNomination table with WHERE confirmed == False",
+        "Eager loads related tool, nominator, and votes entities via selectinload"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Reads from PriorArtNomination, Tool, User, PriorArtVote tables"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "nominate",
+      "description": "Creates a new prior art nomination for a tool and optionally notifies the tool author if they are not the nominator",
+      "inputs": [
+        {
+          "name": "body",
+          "type_ref": "NominationRequest",
+          "required": true,
+          "default": "",
+          "description": "Nomination details including tool_slug, platform, platform_feature, evidence",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user injected by get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by get_db dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "NominationResponse",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with given slug not found or is_active == False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "User is authenticated",
+        "Database session is active and connected",
+        "Tool with given slug exists and is_active == True"
+      ],
+      "postconditions": [
+        "PriorArtNomination record created in database with confirmed=False (default)",
+        "If tool.author_id != user.id, Notification created for tool author with type='prior_art_nomination'",
+        "Returns dictionary with nomination UUID as string and status='nominated'",
+        "All changes committed to database"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Inserts PriorArtNomination record",
+        "Conditionally inserts Notification record if author is not nominator",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Reads from Tool table to find tool by slug"
+        },
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Writes to PriorArtNomination and optionally Notification tables"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "vote_on_nomination",
+      "description": "Casts a vote for a prior art nomination, checks vote threshold, confirms nomination if threshold reached, and notifies tool author on confirmation",
+      "inputs": [
+        {
+          "name": "nomination_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "UUID of the nomination as string",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user injected by get_current_user dependency",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session injected by get_db dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "VoteResponse",
+      "error_cases": [
+        {
+          "name": "invalid_uuid",
+          "condition": "nomination_id cannot be parsed as valid UUID",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "nomination_not_found",
+          "condition": "No nomination exists with given UUID",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Nomination not found"
+          }
+        }
+      ],
+      "preconditions": [
+        "User is authenticated",
+        "Database session is active and connected",
+        "nomination_id is a valid UUID string",
+        "Nomination exists in database",
+        "settings.prior_art_vote_threshold is configured"
+      ],
+      "postconditions": [
+        "If nomination already confirmed: returns {'status': 'already_confirmed'} without side effects",
+        "If user already voted: returns {'status': 'already_voted'} without side effects",
+        "Otherwise: PriorArtVote record created, returns {'status': 'voted', 'vote_count': int, 'confirmed': bool}",
+        "If vote_count >= threshold after vote: nomination.confirmed set to True, nomination.confirmed_at set to current UTC time, Notification created for tool author",
+        "All changes committed to database"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Converts nomination_id string to UUID",
+        "Reads nomination and related votes/tool from database",
+        "Checks for existing vote by user",
+        "Inserts PriorArtVote record (on new vote)",
+        "Flushes to get vote reflected in count query",
+        "Executes COUNT query on PriorArtVote",
+        "Conditionally updates nomination confirmed/confirmed_at fields and inserts Notification (if threshold reached)",
+        "Commits database transaction"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database",
+          "description": "Reads from PriorArtNomination, PriorArtVote tables"
+        },
+        {
+          "kind": "writes_file",
+          "target": "database",
+          "description": "Writes to PriorArtVote, conditionally updates PriorArtNomination and writes to Notification"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "datetime",
+    "fastapi",
+    "pydantic",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "sqlalchemy.orm",
+    "uuid",
+    "backend.auth.dependencies",
+    "backend.config",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.auth.dependencies": [
+      "get_current_user"
+    ],
+    "backend.config": [
+      "settings"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "Notification",
+      "PriorArtNomination",
+      "PriorArtVote",
+      "Tool",
+      "User"
+    ]
+  },
+  "invariants": [
+    "Router prefix is '/api/prior-art'",
+    "Router tag is 'provenance'",
+    "Nomination confirmation requires vote_count >= settings.prior_art_vote_threshold",
+    "Users cannot vote multiple times on the same nomination",
+    "Confirmed nominations cannot receive additional votes (early return with 'already_confirmed' status)",
+    "Tool authors receive notifications when their tool is nominated (unless they are the nominator)",
+    "Tool authors receive notifications when nomination is confirmed",
+    "Nomination IDs are UUIDs stored/returned as strings",
+    "All datetime values returned as ISO format strings",
+    "confirmed_at is set to UTC time when nomination reaches threshold"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "PriorArtNomination",
+      "Tool",
+      "User",
+      "PriorArtVote"
+    ],
+    "writes": [
+      "PriorArtNomination",
+      "PriorArtVote",
+      "Notification"
+    ],
+    "rationale": "FastAPI router for managing prior art nominations with database persistence and community voting",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "query",
+        "fields": [
+          "confirmed",
+          "created_at",
+          "confirmed_at",
+          "tool_slug",
+          "is_active",
+          "user_id",
+          "nomination_id"
+        ],
+        "rationale": "Queries nominations, tools, users, and votes for listing and validation"
+      },
+      {
+        "type": "database_write",
+        "classification": "insert_update",
+        "fields": [
+          "tool_id",
+          "platform",
+          "platform_feature",
+          "evidence",
+          "nominated_by",
+          "confirmed",
+          "confirmed_at"
+        ],
+        "rationale": "Creates nominations, votes, and notifications; updates confirmation status"
+      },
+      {
+        "type": "notification",
+        "classification": "user_notification",
+        "fields": [
+          "user_id",
+          "type",
+          "title",
+          "body",
+          "data"
+        ],
+        "rationale": "Notifies tool authors of nominations and confirmations"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "prior_art_nominations",
+      "prior_art_votes"
+    ],
+    "rationale": "This component is the authoritative handler for creating and managing prior art nominations and votes within the centaur.tools registry"
+  }
+}

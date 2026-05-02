@@ -1,0 +1,750 @@
+{
+  "component_id": "backend_api_registry_router",
+  "name": "Tool Registry API Router",
+  "description": "FastAPI router for the centaur.tools registry. Handles tool submission, retrieval, updates, and deactivation with MIT license enforcement, GitHub repo verification, fork tracking, proximity linking, voting, and forum thread creation.",
+  "version": 1,
+  "types": [
+    {
+      "name": "ToolSubmission",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool name",
+          "validators": []
+        },
+        {
+          "name": "description",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool description",
+          "validators": []
+        },
+        {
+          "name": "problem_statement",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Problem the tool solves",
+          "validators": []
+        },
+        {
+          "name": "repo_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Repository URL (must be owned by submitter)",
+          "validators": []
+        },
+        {
+          "name": "license",
+          "type_ref": "str",
+          "required": false,
+          "default": "MIT",
+          "description": "License (must be MIT, validated)",
+          "validators": [
+            {
+              "kind": "custom",
+              "expression": "must_be_mit",
+              "error_message": "centaur.tools requires MIT license. The social contract is: everything forkable, stealable, buildable-upon. Cite your parents. MIT is the only license that guarantees this."
+            }
+          ]
+        },
+        {
+          "name": "language",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Programming language",
+          "validators": []
+        },
+        {
+          "name": "tags",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "List of tags (max 20 used)",
+          "validators": []
+        },
+        {
+          "name": "fork_parent_slug",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Slug of parent tool if this is a fork",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Pydantic model for submitting a new tool to the registry. Enforces MIT license via validator.",
+      "owner_component": ""
+    },
+    {
+      "name": "ToolUpdate",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "description",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Updated description",
+          "validators": []
+        },
+        {
+          "name": "problem_statement",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Updated problem statement",
+          "validators": []
+        },
+        {
+          "name": "repo_url",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Updated repository URL",
+          "validators": []
+        },
+        {
+          "name": "language",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Updated language",
+          "validators": []
+        },
+        {
+          "name": "tags",
+          "type_ref": "list[str] | None",
+          "required": false,
+          "default": "",
+          "description": "Updated tags (replaces all existing)",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Pydantic model for updating an existing tool. All fields optional.",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "slugify",
+      "description": "Converts a tool name to a URL-safe slug by lowercasing, replacing non-alphanumeric characters with hyphens, and stripping leading/trailing hyphens.",
+      "inputs": [
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool name to slugify",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns lowercase string with only alphanumerics and hyphens",
+        "No leading or trailing hyphens"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "must_be_mit",
+      "description": "Pydantic field validator for ToolSubmission.license. Enforces MIT license requirement by raising ValueError if license is not 'MIT' (case-insensitive).",
+      "inputs": [
+        {
+          "name": "cls",
+          "type_ref": "type",
+          "required": true,
+          "default": "",
+          "description": "Class (ToolSubmission)",
+          "validators": []
+        },
+        {
+          "name": "v",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "License string to validate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "non_mit_license",
+          "condition": "v.upper() != 'MIT'",
+          "error_type": "ValueError",
+          "error_data": {
+            "message": "centaur.tools requires MIT license. The social contract is: everything forkable, stealable, buildable-upon. Cite your parents. MIT is the only license that guarantees this."
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns 'MIT' if validation passes"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "list_tools",
+      "description": "Async FastAPI endpoint to list active tools with pagination, optional tag filtering, vote counts, and user vote status. Returns paginated tool list with author info.",
+      "inputs": [
+        {
+          "name": "tag",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional tag filter",
+          "validators": []
+        },
+        {
+          "name": "page",
+          "type_ref": "int",
+          "required": false,
+          "default": "1",
+          "description": "Page number (min 1)",
+          "validators": []
+        },
+        {
+          "name": "per_page",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Items per page (1-100)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session (injected)",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User | None",
+          "required": false,
+          "default": "",
+          "description": "Optional authenticated user (injected)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [
+        "page >= 1",
+        "1 <= per_page <= 100"
+      ],
+      "postconditions": [
+        "Returns dict with 'tools' (list), 'total' (int), 'page' (int), 'per_page' (int)",
+        "Each tool includes slug, name, description, problem_statement, language, tags, author, vote_count, user_voted, created_at",
+        "Only active tools (is_active == True) returned",
+        "Tools ordered by created_at descending"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads from Tool, ToolTag, ToolVote tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database:Tool,ToolTag,ToolVote",
+          "description": "Queries tool list, vote counts, user votes"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_tool",
+      "description": "Async FastAPI endpoint to retrieve a single tool by slug with full details: vote count, user vote status, proximity neighbors, fork lineage (parents/children), and discussion thread with replies.",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool slug",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session (injected)",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User | None",
+          "required": false,
+          "default": "",
+          "description": "Optional authenticated user (injected)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with slug not found or is_active == False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dict with tool details: slug, name, description, problem_statement, repo_url, license, language, tags, author (username, display_name, avatar_url), vote_count, user_voted, neighbors (top 10 by similarity), forks (parents, children), discussion (thread_id, reply_count, replies), created_at, updated_at",
+        "Neighbors sorted by similarity descending, limited to 10",
+        "Discussion replies sorted by created_at ascending"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads from Tool, ToolTag, ToolVote, ProximityLink, ForkLink, ForumThread, ForumReply tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "database:Tool,ToolTag,ToolVote,ProximityLink,ForkLink,ForumThread,ForumReply",
+          "description": "Queries tool, votes, proximity, forks, forum thread"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "verify_repo_ownership",
+      "description": "Async helper function to verify GitHub repo ownership or collaborator access. Checks if repo owner matches username or if user is a collaborator via GitHub API. Returns True for non-GitHub repos.",
+      "inputs": [
+        {
+          "name": "repo_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Repository URL to verify",
+          "validators": []
+        },
+        {
+          "name": "username",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "GitHub username to verify ownership",
+          "validators": []
+        }
+      ],
+      "output_type": "bool",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns True if non-GitHub URL",
+        "Returns True if repo owner matches username (case-insensitive)",
+        "Returns True if user is collaborator on organization repo (GitHub API check)",
+        "Returns False otherwise or on API error"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Makes HTTP GET requests to GitHub API"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "https://api.github.com",
+          "description": "Fetches repo data and collaborator status"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 5000,
+        "max_memory_mb": null,
+        "complexity": null
+      }
+    },
+    {
+      "name": "submit_tool",
+      "description": "Async FastAPI POST endpoint to submit a new tool. Verifies GitHub repo ownership, creates tool with unique slug, adds tags (max 20), creates fork link if parent specified, sends notification to parent author, auto-creates forum thread in 'show-and-tell' category, and triggers proximity scan.",
+      "inputs": [
+        {
+          "name": "body",
+          "type_ref": "ToolSubmission",
+          "required": true,
+          "default": "",
+          "description": "Tool submission data",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user (injected)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session (injected)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "repo_ownership_failed",
+          "condition": "verify_repo_ownership returns False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "The repository {body.repo_url} does not appear to belong to your GitHub account ({user.username}). You can only register tools from repositories you own or have collaborator access to."
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "body.license must be 'MIT' (validated by Pydantic)"
+      ],
+      "postconditions": [
+        "Returns dict with 'slug' (str) and 'status' ('created')",
+        "Tool created in database with unique slug",
+        "Tags created (up to 20, lowercased, stripped)",
+        "ForkLink created if fork_parent_slug exists and is active",
+        "Notification sent to parent author if fork",
+        "ForumThread created in 'show-and-tell' category if exists",
+        "Proximity scan triggered (best-effort, errors logged)"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Writes to Tool, ToolTag, ForkLink, Notification, ForumThread tables",
+        "Calls verify_repo_ownership",
+        "Calls scan_proximity"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database:Tool,ToolTag,ForkLink,Notification,ForumThread",
+          "description": "Creates tool, tags, fork link, notification, forum thread"
+        },
+        {
+          "kind": "network_call",
+          "target": "verify_repo_ownership",
+          "description": "Verifies GitHub repo ownership"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "scan_proximity",
+          "description": "Triggers proximity embedding scan"
+        },
+        {
+          "kind": "logging",
+          "target": "",
+          "description": "Logs proximity scan errors"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "update_tool",
+      "description": "Async FastAPI PATCH endpoint to update an existing tool. Only tool author can update. Updates fields if provided, replaces all tags if tags provided, triggers proximity re-scan if problem_statement changed.",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool slug to update",
+          "validators": []
+        },
+        {
+          "name": "body",
+          "type_ref": "ToolUpdate",
+          "required": true,
+          "default": "",
+          "description": "Update data (all fields optional)",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user (injected)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session (injected)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with slug not found or is_active == False",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        },
+        {
+          "name": "not_owner",
+          "condition": "tool.author_id != user.id",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "Not the owner"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "Tool must exist and be active",
+        "User must be tool author"
+      ],
+      "postconditions": [
+        "Returns dict with 'slug' (str) and 'status' ('updated')",
+        "Tool fields updated if provided in body",
+        "All tags replaced if body.tags provided (max 20, lowercased, stripped)",
+        "Proximity re-scan triggered if problem_statement updated (best-effort, errors logged)"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Writes to Tool, ToolTag tables",
+        "Calls scan_proximity if problem_statement changed"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database:Tool,ToolTag",
+          "description": "Updates tool fields, replaces tags"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "scan_proximity",
+          "description": "Re-scans proximity if problem_statement changed"
+        },
+        {
+          "kind": "logging",
+          "target": "",
+          "description": "Logs proximity scan errors"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "deactivate_tool",
+      "description": "Async FastAPI DELETE endpoint to deactivate a tool (soft delete). Only tool author can deactivate. Sets is_active to False.",
+      "inputs": [
+        {
+          "name": "slug",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tool slug to deactivate",
+          "validators": []
+        },
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": true,
+          "default": "",
+          "description": "Authenticated user (injected)",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": true,
+          "default": "",
+          "description": "Database session (injected)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "tool_not_found",
+          "condition": "Tool with slug not found",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "404",
+            "detail": "Tool not found"
+          }
+        },
+        {
+          "name": "not_owner",
+          "condition": "tool.author_id != user.id",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "403",
+            "detail": "Not the owner"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated",
+        "Tool must exist",
+        "User must be tool author"
+      ],
+      "postconditions": [
+        "Returns dict with 'status' ('deactivated')",
+        "Tool.is_active set to False"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Writes to Tool table"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "database:Tool",
+          "description": "Sets is_active to False"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "re",
+    "uuid",
+    "fastapi",
+    "pydantic",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "sqlalchemy.orm",
+    "httpx",
+    "logging",
+    "..auth.dependencies",
+    "..database",
+    "..models",
+    "..proximity.service"
+  ],
+  "dependency_contracts": {
+    "..auth.dependencies": [
+      "get_current_user",
+      "get_optional_user"
+    ],
+    "..database": [
+      "get_db"
+    ],
+    "..models": [
+      "ForumCategory",
+      "ForumReply",
+      "ForumThread",
+      "ForkLink",
+      "Notification",
+      "ProximityLink",
+      "Tool",
+      "ToolEmbedding",
+      "ToolTag",
+      "ToolVote",
+      "User"
+    ],
+    "..proximity.service": [
+      "scan_proximity"
+    ]
+  },
+  "invariants": [
+    "MIT license is the only acceptable license for tool submissions",
+    "Tool slugs are unique (collision handled with 6-char uuid suffix)",
+    "Tags are limited to 20 per tool, lowercased and stripped",
+    "Only active tools (is_active == True) are visible in list/get endpoints",
+    "Only tool authors can update or deactivate their tools",
+    "Forum threads auto-created in 'show-and-tell' category on tool submission",
+    "Proximity scan is best-effort (errors logged but don't fail operations)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "Tool",
+      "ToolTag",
+      "ToolVote",
+      "ProximityLink",
+      "ForkLink",
+      "ForumThread",
+      "ForumReply",
+      "ForumCategory",
+      "User"
+    ],
+    "writes": [
+      "Tool",
+      "ToolTag",
+      "ForkLink",
+      "Notification",
+      "ForumThread"
+    ],
+    "rationale": "Reads tools, tags, votes, proximity links, forks, forum data for listing and retrieval. Writes tools, tags, fork links, notifications, forum threads on submission and update operations.",
+    "side_effects": [
+      {
+        "type": "network_call",
+        "classification": "external_api",
+        "fields": [
+          "verify_repo_ownership"
+        ],
+        "rationale": "Calls GitHub API to verify repository ownership/collaborator status"
+      },
+      {
+        "type": "proximity_scan",
+        "classification": "async_processing",
+        "fields": [
+          "scan_proximity"
+        ],
+        "rationale": "Triggers embedding-based proximity calculation for tool discovery (best-effort, non-blocking)"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "tool_registry"
+    ],
+    "rationale": "Owns the tool submission, retrieval, update, and deactivation workflows for the centaur.tools registry"
+  }
+}

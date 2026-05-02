@@ -1,0 +1,405 @@
+{
+  "component_id": "backend_api_auth_router",
+  "name": "Auth Router",
+  "description": "FastAPI authentication router implementing GitHub OAuth flow with JWT session management. Handles login redirect, OAuth callback with user creation/update, logout, and current user retrieval.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "create_jwt",
+      "description": "Creates a JWT token for a user with subject, expiration, and issued-at claims",
+      "inputs": [
+        {
+          "name": "user_id",
+          "type_ref": "uuid.UUID",
+          "required": true,
+          "default": "",
+          "description": "User UUID to encode in the token subject",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [
+        "settings.jwt_secret is configured",
+        "settings.jwt_algorithm is configured",
+        "settings.jwt_expiry_days is configured"
+      ],
+      "postconditions": [
+        "Returns valid JWT string encoded with HS256 or configured algorithm",
+        "Token contains 'sub' claim with stringified user_id",
+        "Token contains 'exp' claim set to current UTC time + jwt_expiry_days",
+        "Token contains 'iat' claim set to current UTC time"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "decode_jwt",
+      "description": "Decodes and validates a JWT token, returning the payload dictionary",
+      "inputs": [
+        {
+          "name": "token",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "JWT token string to decode",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "InvalidTokenError",
+          "condition": "Token signature is invalid or algorithm mismatch",
+          "error_type": "jwt.InvalidTokenError",
+          "error_data": {}
+        },
+        {
+          "name": "ExpiredSignatureError",
+          "condition": "Token exp claim is in the past",
+          "error_type": "jwt.ExpiredSignatureError",
+          "error_data": {}
+        },
+        {
+          "name": "DecodeError",
+          "condition": "Token is malformed or cannot be decoded",
+          "error_type": "jwt.DecodeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.jwt_secret is configured",
+        "settings.jwt_algorithm is configured"
+      ],
+      "postconditions": [
+        "Returns decoded payload dictionary if token is valid and not expired"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_current_user",
+      "description": "Placeholder dependency function that always raises 401 HTTPException. Intended to be overridden in main.py with real cookie-based authentication logic.",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": false,
+          "default": "Depends(get_db)",
+          "description": "Database session injected via Depends(get_db)",
+          "validators": []
+        },
+        {
+          "name": "session",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Session token (placeholder parameter)",
+          "validators": []
+        }
+      ],
+      "output_type": "User",
+      "error_cases": [
+        {
+          "name": "NotAuthenticated",
+          "condition": "Always (this is a placeholder implementation)",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Not authenticated"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Always raises HTTPException with status 401"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "HTTPException",
+          "description": "Always raises 401 Not authenticated"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "login",
+      "description": "GET /api/auth/login endpoint that redirects to GitHub OAuth authorization page with client_id and scopes",
+      "inputs": [],
+      "output_type": "RedirectResponse",
+      "error_cases": [],
+      "preconditions": [
+        "settings.github_client_id is configured"
+      ],
+      "postconditions": [
+        "Returns RedirectResponse to GitHub authorize URL",
+        "Redirect URL includes client_id and scope parameters (read:user user:email)"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "callback",
+      "description": "GET /api/auth/callback endpoint handling GitHub OAuth callback. Exchanges code for access token, fetches GitHub user profile, creates or updates local User record, generates JWT, and redirects to frontend dashboard with session cookie.",
+      "inputs": [
+        {
+          "name": "code",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "OAuth authorization code from GitHub",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": false,
+          "default": "Depends(get_db)",
+          "description": "Database session injected via Depends(get_db)",
+          "validators": []
+        }
+      ],
+      "output_type": "RedirectResponse",
+      "error_cases": [
+        {
+          "name": "OAuthFailed",
+          "condition": "GitHub token endpoint does not return access_token",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "400",
+            "detail": "GitHub OAuth failed"
+          }
+        },
+        {
+          "name": "MissingGitHubId",
+          "condition": "GitHub user response does not contain 'id' field",
+          "error_type": "KeyError",
+          "error_data": {}
+        },
+        {
+          "name": "NetworkError",
+          "condition": "httpx request fails (timeout, connection error, etc.)",
+          "error_type": "httpx.RequestError",
+          "error_data": {}
+        },
+        {
+          "name": "DatabaseError",
+          "condition": "Database commit or query fails",
+          "error_type": "sqlalchemy.exc.SQLAlchemyError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.github_client_id is configured",
+        "settings.github_client_secret is configured",
+        "settings.frontend_url is configured",
+        "settings.jwt_expiry_days is configured"
+      ],
+      "postconditions": [
+        "User record exists in database with GitHub profile data",
+        "Returns RedirectResponse to {frontend_url}/dashboard",
+        "Response includes httponly secure session cookie with JWT token",
+        "Cookie max_age is jwt_expiry_days * 86400 seconds",
+        "Cookie has samesite=lax attribute"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "HTTP POST to https://github.com/login/oauth/access_token",
+        "HTTP GET to https://api.github.com/user",
+        "Database INSERT if user does not exist",
+        "Database UPDATE of avatar_url, display_name, email if user exists",
+        "Database commit and refresh"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "https://github.com/login/oauth/access_token",
+          "description": "POST to exchange OAuth code for access token"
+        },
+        {
+          "kind": "network_call",
+          "target": "https://api.github.com/user",
+          "description": "GET to fetch authenticated user profile"
+        },
+        {
+          "kind": "writes_file",
+          "target": "database.users",
+          "description": "INSERT new user or UPDATE existing user fields"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "logout",
+      "description": "POST /api/auth/logout endpoint that deletes the session cookie and returns 204 No Content",
+      "inputs": [],
+      "output_type": "Response",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns Response with status_code=204",
+        "Session cookie is deleted from response"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "me",
+      "description": "GET /api/auth/me endpoint that returns current authenticated user's profile information",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": false,
+          "default": "Depends(get_current_user)",
+          "description": "Current user injected via Depends(get_current_user)",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "NotAuthenticated",
+          "condition": "get_current_user raises HTTPException (user not authenticated)",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Not authenticated"
+          }
+        }
+      ],
+      "preconditions": [
+        "User is authenticated (get_current_user succeeds)"
+      ],
+      "postconditions": [
+        "Returns dictionary with id (stringified UUID), username, display_name, avatar_url, bio"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "uuid",
+    "datetime",
+    "httpx",
+    "jwt",
+    "fastapi",
+    "sqlalchemy",
+    "backend.config",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.config": [
+      "settings"
+    ],
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "User"
+    ]
+  },
+  "invariants": [
+    "GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'",
+    "GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'",
+    "GITHUB_USER_URL = 'https://api.github.com/user'",
+    "Router prefix is '/api/auth' with tag 'auth'",
+    "JWT tokens use algorithm from settings.jwt_algorithm",
+    "JWT tokens expire after settings.jwt_expiry_days days",
+    "Session cookie name is 'session'",
+    "Session cookies are httponly=True, secure=True, samesite='lax'"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "users"
+    ],
+    "writes": [
+      "users"
+    ],
+    "rationale": "Queries User table by github_id in callback endpoint. Creates new User records or updates existing records (avatar_url, display_name, email) during OAuth flow.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "user_authentication",
+        "fields": [
+          "github_id"
+        ],
+        "rationale": "SELECT User WHERE github_id = ? to find existing user"
+      },
+      {
+        "type": "database_write",
+        "classification": "user_authentication",
+        "fields": [
+          "github_id",
+          "username",
+          "display_name",
+          "email",
+          "avatar_url",
+          "bio"
+        ],
+        "rationale": "INSERT new user or UPDATE avatar_url, display_name, email on existing user"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "user_authentication",
+      "oauth_flow"
+    ],
+    "rationale": "Owns the GitHub OAuth authentication flow, JWT creation/validation, and session management for the application"
+  }
+}

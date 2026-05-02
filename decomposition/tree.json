@@ -1,0 +1,667 @@
+{
+  "root_id": "root",
+  "nodes": {
+    "root": {
+      "component_id": "root",
+      "name": "Project Root",
+      "description": "Adopted codebase at /Users/jmcentire/Code/centaur.tools",
+      "depth": 0,
+      "parent_id": "",
+      "children": [
+        "contracts",
+        "backend"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts": {
+      "component_id": "contracts",
+      "name": "Contracts",
+      "description": "Package: contracts",
+      "depth": 1,
+      "parent_id": "root",
+      "children": [
+        "contracts_contracts_backend_api_voting_router_interface",
+        "contracts_contracts_contracts_backend_api_auth_router_interface_interface",
+        "contracts_backend_api_auth_router",
+        "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+        "contracts_contracts_backend_api_auth_router_interface",
+        "contracts_contracts_backend_api_main_interface",
+        "contracts_backend_api_database",
+        "contracts_backend_api_voting_router",
+        "contracts_contracts_backend_api_database_interface",
+        "contracts_contracts_backend_api_auth_dependencies_interface",
+        "contracts_backend_api_main",
+        "contracts_backend_api_auth_dependencies",
+        "contracts_contracts_contracts_backend_api_voting_router_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_voting_router_interface": {
+      "component_id": "contracts_contracts_backend_api_voting_router_interface",
+      "name": "Contracts Backend Api Voting Router Interface",
+      "description": "Package: contracts/contracts_backend_api_voting_router_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_backend_api_voting_router_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_voting_router_interface_interface": {
+      "component_id": "contracts_contracts_backend_api_voting_router_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_backend_api_voting_router_interface/interface.py: vote_useful, remove_vote",
+      "depth": 3,
+      "parent_id": "contracts_contracts_backend_api_voting_router_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_backend_api_auth_router_interface_interface": {
+      "component_id": "contracts_contracts_contracts_backend_api_auth_router_interface_interface",
+      "name": "Contracts Contracts Backend Api Auth Router Interface Interface",
+      "description": "Package: contracts/contracts_contracts_backend_api_auth_router_interface_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface": {
+      "component_id": "contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_contracts_backend_api_auth_router_interface_interface/interface.py: create_jwt, decode_jwt, get_current_user, login, callback (+2 more)",
+      "depth": 3,
+      "parent_id": "contracts_contracts_contracts_backend_api_auth_router_interface_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_auth_router": {
+      "component_id": "contracts_backend_api_auth_router",
+      "name": "Backend Api Auth Router",
+      "description": "Package: contracts/backend_api_auth_router",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_backend_api_auth_router_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_auth_router_interface": {
+      "component_id": "contracts_backend_api_auth_router_interface",
+      "name": "Interface",
+      "description": "Module contracts/backend_api_auth_router/interface.py: create_jwt, decode_jwt, get_current_user, login, callback (+2 more)",
+      "depth": 3,
+      "parent_id": "contracts_backend_api_auth_router",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface": {
+      "component_id": "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+      "name": "Contracts Contracts Contracts Backend Api Auth Router Interface Interface Interface",
+      "description": "Package: contracts/contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface_interface": {
+      "component_id": "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface/interface.py: create_jwt, decode_jwt, get_current_user, login, callback (+2 more)",
+      "depth": 3,
+      "parent_id": "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_auth_router_interface": {
+      "component_id": "contracts_contracts_backend_api_auth_router_interface",
+      "name": "Contracts Backend Api Auth Router Interface",
+      "description": "Package: contracts/contracts_backend_api_auth_router_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_backend_api_auth_router_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_auth_router_interface_interface": {
+      "component_id": "contracts_contracts_backend_api_auth_router_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_backend_api_auth_router_interface/interface.py: create_jwt, decode_jwt, get_current_user, login, callback (+2 more)",
+      "depth": 3,
+      "parent_id": "contracts_contracts_backend_api_auth_router_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_main_interface": {
+      "component_id": "contracts_contracts_backend_api_main_interface",
+      "name": "Contracts Backend Api Main Interface",
+      "description": "Package: contracts/contracts_backend_api_main_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_backend_api_main_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_main_interface_interface": {
+      "component_id": "contracts_contracts_backend_api_main_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_backend_api_main_interface/interface.py: health",
+      "depth": 3,
+      "parent_id": "contracts_contracts_backend_api_main_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_database": {
+      "component_id": "contracts_backend_api_database",
+      "name": "Backend Api Database",
+      "description": "Package: contracts/backend_api_database",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_backend_api_database_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_database_interface": {
+      "component_id": "contracts_backend_api_database_interface",
+      "name": "Interface",
+      "description": "Module contracts/backend_api_database/interface.py: get_db",
+      "depth": 3,
+      "parent_id": "contracts_backend_api_database",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_voting_router": {
+      "component_id": "contracts_backend_api_voting_router",
+      "name": "Backend Api Voting Router",
+      "description": "Package: contracts/backend_api_voting_router",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_backend_api_voting_router_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_voting_router_interface": {
+      "component_id": "contracts_backend_api_voting_router_interface",
+      "name": "Interface",
+      "description": "Module contracts/backend_api_voting_router/interface.py: vote_useful, remove_vote",
+      "depth": 3,
+      "parent_id": "contracts_backend_api_voting_router",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_database_interface": {
+      "component_id": "contracts_contracts_backend_api_database_interface",
+      "name": "Contracts Backend Api Database Interface",
+      "description": "Package: contracts/contracts_backend_api_database_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_backend_api_database_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_database_interface_interface": {
+      "component_id": "contracts_contracts_backend_api_database_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_backend_api_database_interface/interface.py: get_db",
+      "depth": 3,
+      "parent_id": "contracts_contracts_backend_api_database_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_auth_dependencies_interface": {
+      "component_id": "contracts_contracts_backend_api_auth_dependencies_interface",
+      "name": "Contracts Backend Api Auth Dependencies Interface",
+      "description": "Package: contracts/contracts_backend_api_auth_dependencies_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_backend_api_auth_dependencies_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_backend_api_auth_dependencies_interface_interface": {
+      "component_id": "contracts_contracts_backend_api_auth_dependencies_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_backend_api_auth_dependencies_interface/interface.py: get_current_user, get_optional_user",
+      "depth": 3,
+      "parent_id": "contracts_contracts_backend_api_auth_dependencies_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_main": {
+      "component_id": "contracts_backend_api_main",
+      "name": "Backend Api Main",
+      "description": "Package: contracts/backend_api_main",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_backend_api_main_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_main_interface": {
+      "component_id": "contracts_backend_api_main_interface",
+      "name": "Interface",
+      "description": "Module contracts/backend_api_main/interface.py: health",
+      "depth": 3,
+      "parent_id": "contracts_backend_api_main",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_auth_dependencies": {
+      "component_id": "contracts_backend_api_auth_dependencies",
+      "name": "Backend Api Auth Dependencies",
+      "description": "Package: contracts/backend_api_auth_dependencies",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_backend_api_auth_dependencies_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_backend_api_auth_dependencies_interface": {
+      "component_id": "contracts_backend_api_auth_dependencies_interface",
+      "name": "Interface",
+      "description": "Module contracts/backend_api_auth_dependencies/interface.py: get_current_user, get_optional_user",
+      "depth": 3,
+      "parent_id": "contracts_backend_api_auth_dependencies",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_backend_api_voting_router_interface_interface": {
+      "component_id": "contracts_contracts_contracts_backend_api_voting_router_interface_interface",
+      "name": "Contracts Contracts Backend Api Voting Router Interface Interface",
+      "description": "Package: contracts/contracts_contracts_backend_api_voting_router_interface_interface",
+      "depth": 2,
+      "parent_id": "contracts",
+      "children": [
+        "contracts_contracts_contracts_backend_api_voting_router_interface_interface_interface"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "contracts_contracts_contracts_backend_api_voting_router_interface_interface_interface": {
+      "component_id": "contracts_contracts_contracts_backend_api_voting_router_interface_interface_interface",
+      "name": "Interface",
+      "description": "Module contracts/contracts_contracts_backend_api_voting_router_interface_interface/interface.py: vote_useful, remove_vote",
+      "depth": 3,
+      "parent_id": "contracts_contracts_contracts_backend_api_voting_router_interface_interface",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend": {
+      "component_id": "backend",
+      "name": "Backend",
+      "description": "Package: backend",
+      "depth": 1,
+      "parent_id": "root",
+      "children": [
+        "backend_api"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api": {
+      "component_id": "backend_api",
+      "name": "Api",
+      "description": "Package: backend/api",
+      "depth": 2,
+      "parent_id": "backend",
+      "children": [
+        "backend_api_database",
+        "backend_api_main",
+        "backend_api_auth",
+        "backend_api_voting",
+        "backend_api_search",
+        "backend_api_forum",
+        "backend_api_provenance",
+        "backend_api_feed",
+        "backend_api_proximity",
+        "backend_api_users",
+        "backend_api_registry",
+        "backend_api_notifications"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_database": {
+      "component_id": "backend_api_database",
+      "name": "Database",
+      "description": "Module backend/api/database.py: get_db",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_main": {
+      "component_id": "backend_api_main",
+      "name": "Main",
+      "description": "Module backend/api/main.py: health",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_auth": {
+      "component_id": "backend_api_auth",
+      "name": "Auth",
+      "description": "Package: backend/api/auth",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_auth_dependencies",
+        "backend_api_auth_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_auth_dependencies": {
+      "component_id": "backend_api_auth_dependencies",
+      "name": "Dependencies",
+      "description": "Module backend/api/auth/dependencies.py: get_current_user, get_optional_user",
+      "depth": 4,
+      "parent_id": "backend_api_auth",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_auth_router": {
+      "component_id": "backend_api_auth_router",
+      "name": "Router",
+      "description": "Module backend/api/auth/router.py: create_jwt, decode_jwt, get_current_user, login, callback (+2 more)",
+      "depth": 4,
+      "parent_id": "backend_api_auth",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_voting": {
+      "component_id": "backend_api_voting",
+      "name": "Voting",
+      "description": "Package: backend/api/voting",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_voting_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_voting_router": {
+      "component_id": "backend_api_voting_router",
+      "name": "Router",
+      "description": "Module backend/api/voting/router.py: vote_useful, remove_vote",
+      "depth": 4,
+      "parent_id": "backend_api_voting",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_search": {
+      "component_id": "backend_api_search",
+      "name": "Search",
+      "description": "Package: backend/api/search",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_search_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_search_router": {
+      "component_id": "backend_api_search_router",
+      "name": "Router",
+      "description": "Module backend/api/search/router.py: get_embedding, search_tools",
+      "depth": 4,
+      "parent_id": "backend_api_search",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_forum": {
+      "component_id": "backend_api_forum",
+      "name": "Forum",
+      "description": "Package: backend/api/forum",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_forum_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_forum_router": {
+      "component_id": "backend_api_forum_router",
+      "name": "Router",
+      "description": "Module backend/api/forum/router.py: list_categories, list_threads, get_thread, create_thread, create_reply (+4 more)",
+      "depth": 4,
+      "parent_id": "backend_api_forum",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_provenance": {
+      "component_id": "backend_api_provenance",
+      "name": "Provenance",
+      "description": "Package: backend/api/provenance",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_provenance_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_provenance_router": {
+      "component_id": "backend_api_provenance_router",
+      "name": "Router",
+      "description": "Module backend/api/provenance/router.py: list_prior_art, list_pending, nominate, vote_on_nomination",
+      "depth": 4,
+      "parent_id": "backend_api_provenance",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_feed": {
+      "component_id": "backend_api_feed",
+      "name": "Feed",
+      "description": "Package: backend/api/feed",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_feed_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_feed_router": {
+      "component_id": "backend_api_feed_router",
+      "name": "Router",
+      "description": "Module backend/api/feed/router.py: _iso, _text_el, _build_feed, atom_feed",
+      "depth": 4,
+      "parent_id": "backend_api_feed",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_proximity": {
+      "component_id": "backend_api_proximity",
+      "name": "Proximity",
+      "description": "Package: backend/api/proximity",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_proximity_service"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_proximity_service": {
+      "component_id": "backend_api_proximity_service",
+      "name": "Service",
+      "description": "Module backend/api/proximity/service.py: scan_proximity",
+      "depth": 4,
+      "parent_id": "backend_api_proximity",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_users": {
+      "component_id": "backend_api_users",
+      "name": "Users",
+      "description": "Package: backend/api/users",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_users_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_users_router": {
+      "component_id": "backend_api_users_router",
+      "name": "Router",
+      "description": "Module backend/api/users/router.py: get_user_profile, update_profile, download_my_data, delete_account, get_starred_tools",
+      "depth": 4,
+      "parent_id": "backend_api_users",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_registry": {
+      "component_id": "backend_api_registry",
+      "name": "Registry",
+      "description": "Package: backend/api/registry",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_registry_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_registry_router": {
+      "component_id": "backend_api_registry_router",
+      "name": "Router",
+      "description": "Module backend/api/registry/router.py: slugify, list_tools, get_tool, verify_repo_ownership, submit_tool (+3 more)",
+      "depth": 4,
+      "parent_id": "backend_api_registry",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_notifications": {
+      "component_id": "backend_api_notifications",
+      "name": "Notifications",
+      "description": "Package: backend/api/notifications",
+      "depth": 3,
+      "parent_id": "backend_api",
+      "children": [
+        "backend_api_notifications_router"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "backend_api_notifications_router": {
+      "component_id": "backend_api_notifications_router",
+      "name": "Router",
+      "description": "Module backend/api/notifications/router.py: list_notifications, unread_count, mark_read, mark_all_read",
+      "depth": 4,
+      "parent_id": "backend_api_notifications",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    }
+  }
+}

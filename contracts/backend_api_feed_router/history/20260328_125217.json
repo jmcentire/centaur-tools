@@ -1,0 +1,310 @@
+{
+  "component_id": "backend_api_feed_router",
+  "name": "Feed Router",
+  "description": "Generates Atom XML feed for centaur.tools, aggregating recent tools and forum threads into a single feed sorted by creation date. Limits to 50 most recent entries total.",
+  "version": 1,
+  "types": [
+    {
+      "name": "APIRouter",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "FastAPI router instance for feed endpoints",
+      "owner_component": "fastapi"
+    }
+  ],
+  "functions": [
+    {
+      "name": "_iso",
+      "description": "Converts a datetime object to ISO 8601 format string. If datetime is naive (no timezone), attaches UTC timezone before conversion.",
+      "inputs": [
+        {
+          "name": "dt",
+          "type_ref": "datetime",
+          "required": true,
+          "default": "",
+          "description": "Datetime to convert",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns ISO 8601 formatted string",
+        "If input datetime is naive, result includes UTC timezone (+00:00 suffix)",
+        "If input datetime is timezone-aware, preserves original timezone in output"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_text_el",
+      "description": "Creates an XML subelement with text content under a parent element. Returns the created element.",
+      "inputs": [
+        {
+          "name": "parent",
+          "type_ref": "Element",
+          "required": true,
+          "default": "",
+          "description": "Parent XML element",
+          "validators": []
+        },
+        {
+          "name": "tag",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Tag name for the new element",
+          "validators": []
+        },
+        {
+          "name": "text",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Text content for the new element",
+          "validators": []
+        }
+      ],
+      "output_type": "Element",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Parent element is mutated to contain a new child with the specified tag",
+        "Child element's text property is set to the provided text",
+        "Returns the newly created child element"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates parent Element by adding a child"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "parent Element",
+          "description": "Adds a child element to parent"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_build_feed",
+      "description": "Constructs an Atom XML feed from tools and forum threads. Merges both lists, sorts by created_at descending, limits to 50 entries, and returns complete Atom XML document as string.",
+      "inputs": [
+        {
+          "name": "tools",
+          "type_ref": "list[Tool]",
+          "required": true,
+          "default": "",
+          "description": "List of Tool model instances with id, name, slug, created_at, description, and author attributes",
+          "validators": []
+        },
+        {
+          "name": "threads",
+          "type_ref": "list[ForumThread]",
+          "required": true,
+          "default": "",
+          "description": "List of ForumThread model instances with id, title, created_at, body, and author attributes",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "AttributeError",
+          "condition": "Tool or ForumThread objects missing required attributes (id, name/title, created_at, slug, description/body, author)",
+          "error_type": "AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "AttributeError",
+          "condition": "Author object missing display_name or username attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns valid Atom XML string with UTF-8 declaration",
+        "Feed contains at most 50 entries total",
+        "Entries are sorted by created_at in descending order",
+        "Feed updated timestamp matches most recent entry, or current time if no entries",
+        "Tool descriptions and thread bodies are truncated to 500 characters",
+        "Author names default to 'unknown' if author is None"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "atom_feed",
+      "description": "FastAPI endpoint handler that queries active tools and forum threads from database, generates Atom XML feed, and returns it with application/atom+xml content type.",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": false,
+          "default": "",
+          "description": "Database session injected via FastAPI Depends(get_db)",
+          "validators": []
+        }
+      ],
+      "output_type": "Response",
+      "error_cases": [
+        {
+          "name": "DatabaseError",
+          "condition": "Database connection fails or query execution fails",
+          "error_type": "sqlalchemy.exc.DatabaseError",
+          "error_data": {}
+        },
+        {
+          "name": "AttributeError",
+          "condition": "Tool or ForumThread models missing expected attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns FastAPI Response with content-type application/atom+xml",
+        "Response body contains valid Atom XML",
+        "Includes up to 50 active tools (is_active==True) with author preloaded",
+        "Includes up to 50 forum threads with author preloaded",
+        "Results are sorted by created_at descending"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Reads from Tool and ForumThread database tables"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "database",
+          "description": "Executes two SELECT queries with joins to fetch tools and threads"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "datetime",
+    "xml.etree.ElementTree",
+    "fastapi",
+    "sqlalchemy",
+    "sqlalchemy.ext.asyncio",
+    "sqlalchemy.orm",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {
+    "backend.database": [
+      "get_db"
+    ],
+    "backend.models": [
+      "ForumThread",
+      "Tool",
+      "User"
+    ],
+    "fastapi": [
+      "APIRouter",
+      "Depends",
+      "Response"
+    ],
+    "sqlalchemy": [
+      "select"
+    ],
+    "sqlalchemy.ext.asyncio": [
+      "AsyncSession"
+    ],
+    "sqlalchemy.orm": [
+      "selectinload"
+    ],
+    "datetime": [
+      "datetime",
+      "timezone"
+    ],
+    "xml.etree.ElementTree": [
+      "Element",
+      "SubElement",
+      "tostring"
+    ]
+  },
+  "invariants": [
+    "ATOM_NS constant is 'http://www.w3.org/2005/Atom'",
+    "Feed ID is always 'urn:centaur:feed'",
+    "Feed title is always 'centaur.tools'",
+    "Feed subtitle is always 'Community-governed registry for AI tools'",
+    "Feed author name is always 'centaur.tools'",
+    "Self link is always 'https://centaur.tools/api/feed/atom.xml'",
+    "Alternate link is always 'https://centaur.tools'",
+    "Maximum 50 entries per feed",
+    "Tool summaries truncated to 500 characters",
+    "Thread summaries truncated to 500 characters",
+    "Tool entries have category 'tool'",
+    "Forum entries have category 'forum'",
+    "Tool URN format: 'urn:centaur:tool:{tool.id}'",
+    "Thread URN format: 'urn:centaur:thread:{thread.id}'",
+    "Tool link format: 'https://centaur.tools/tools/{tool.slug}'",
+    "Thread link format: 'https://centaur.tools/forum/thread/{thread.id}'"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "Tool table",
+      "ForumThread table",
+      "User table (via foreign key)"
+    ],
+    "writes": [],
+    "rationale": "Read-only endpoint that queries database for feed generation. Loads Tool.author and ForumThread.author relationships via selectinload.",
+    "side_effects": [
+      {
+        "type": "database_read",
+        "classification": "read",
+        "fields": [
+          "Tool.id",
+          "Tool.name",
+          "Tool.slug",
+          "Tool.created_at",
+          "Tool.description",
+          "Tool.is_active",
+          "Tool.author",
+          "ForumThread.id",
+          "ForumThread.title",
+          "ForumThread.created_at",
+          "ForumThread.body",
+          "ForumThread.author",
+          "User.display_name",
+          "User.username"
+        ],
+        "rationale": "Fetches most recent 50 active tools and 50 forum threads with author information for feed generation"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": "Read-only feed endpoint with no ownership of data domains"
+  }
+}

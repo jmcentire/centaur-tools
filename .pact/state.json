@@ -1,0 +1,177 @@
+{
+  "id": "d690cabc47f1",
+  "project_dir": "/Users/jmcentire/Code/centaur.tools",
+  "status": "active",
+  "phase": "implement",
+  "component_tasks": [
+    {
+      "component_id": "contracts_contracts_backend_api_voting_router_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_backend_api_auth_router_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_contracts_contracts_backend_api_auth_router_interface_interface_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_backend_api_auth_router_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_backend_api_main_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_backend_api_database_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_backend_api_voting_router_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_backend_api_database_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_backend_api_auth_dependencies_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_backend_api_main_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_backend_api_auth_dependencies_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "contracts_contracts_contracts_backend_api_voting_router_interface_interface_interface",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_database",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_main",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_auth_dependencies",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_auth_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_voting_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_search_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_forum_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_provenance_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_feed_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_proximity_service",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_users_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_registry_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    },
+    {
+      "component_id": "backend_api_notifications_router",
+      "status": "pending",
+      "attempts": 0,
+      "last_error": ""
+    }
+  ],
+  "interview_result": null,
+  "total_cost_usd": 0.0,
+  "total_tokens": 0,
+  "last_check_in": "",
+  "created_at": "2026-03-28T13:20:54.210771",
+  "completed_at": "",
+  "pause_reason": "",
+  "phase_cycles": 0,
+  "health_snapshot": {},
+  "processing_register": "",
+  "audit_commit": "",
+  "arbiter_response": {},
+  "constrain_context": {}
+}

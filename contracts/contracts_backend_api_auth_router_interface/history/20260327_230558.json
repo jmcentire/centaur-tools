@@ -1,0 +1,361 @@
+{
+  "component_id": "contracts_backend_api_auth_router_interface",
+  "name": "Backend API Auth Router Interface",
+  "description": "FastAPI router providing GitHub OAuth authentication flow with JWT session management. Handles login redirects, OAuth callbacks, user creation/update, session cookies, and authenticated user retrieval.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "create_jwt",
+      "description": "Creates a JWT token for a given user ID with expiration set from settings",
+      "inputs": [
+        {
+          "name": "user_id",
+          "type_ref": "uuid.UUID",
+          "required": true,
+          "default": "",
+          "description": "User ID to encode in the JWT 'sub' claim",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [
+        "settings.jwt_secret must be configured",
+        "settings.jwt_algorithm must be configured",
+        "settings.jwt_expiry_days must be configured"
+      ],
+      "postconditions": [
+        "Returns a JWT string with 'sub' claim set to stringified user_id",
+        "Token expires in settings.jwt_expiry_days days from now",
+        "Token contains 'iat' (issued at) timestamp"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads configuration from settings object"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "settings object",
+          "description": "Reads configuration from settings object"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "decode_jwt",
+      "description": "Decodes and validates a JWT token using configured secret and algorithm",
+      "inputs": [
+        {
+          "name": "token",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "JWT token string to decode and validate",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "invalid_token",
+          "condition": "Token is malformed, expired, or signature is invalid",
+          "error_type": "jwt.exceptions.InvalidTokenError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.jwt_secret must be configured",
+        "settings.jwt_algorithm must be configured",
+        "token must be valid JWT format"
+      ],
+      "postconditions": [
+        "Returns decoded payload dictionary if token is valid and not expired"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads configuration from settings object"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "settings object",
+          "description": "Reads configuration from settings object"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "get_current_user",
+      "description": "Placeholder dependency that always raises 401. Overridden in main.py with actual cookie-based authentication implementation",
+      "inputs": [
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": false,
+          "default": "Depends(get_db)",
+          "description": "Database session dependency",
+          "validators": []
+        },
+        {
+          "name": "session",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Session cookie value",
+          "validators": []
+        }
+      ],
+      "output_type": "User",
+      "error_cases": [
+        {
+          "name": "not_authenticated",
+          "condition": "Always raised in this placeholder implementation",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Not authenticated"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Always raises HTTPException"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "login",
+      "description": "Initiates GitHub OAuth flow by redirecting to GitHub authorization URL with client_id and requested scopes",
+      "inputs": [],
+      "output_type": "RedirectResponse",
+      "error_cases": [],
+      "preconditions": [
+        "settings.github_client_id must be configured"
+      ],
+      "postconditions": [
+        "Returns RedirectResponse to GitHub OAuth authorize URL",
+        "Redirect includes client_id and scope=read:user user:email"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Reads configuration from settings object"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "settings object",
+          "description": "Reads configuration from settings object"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "callback",
+      "description": "Handles GitHub OAuth callback: exchanges code for access token, fetches user info, creates or updates User in database, generates JWT, sets session cookie, and redirects to frontend dashboard",
+      "inputs": [
+        {
+          "name": "code",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "GitHub OAuth authorization code",
+          "validators": []
+        },
+        {
+          "name": "db",
+          "type_ref": "AsyncSession",
+          "required": false,
+          "default": "Depends(get_db)",
+          "description": "Database session dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "RedirectResponse",
+      "error_cases": [
+        {
+          "name": "oauth_failed",
+          "condition": "GitHub token exchange does not return access_token",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "400",
+            "detail": "GitHub OAuth failed"
+          }
+        },
+        {
+          "name": "missing_github_id",
+          "condition": "GitHub user response missing 'id' field",
+          "error_type": "KeyError",
+          "error_data": {}
+        },
+        {
+          "name": "network_error",
+          "condition": "HTTP request to GitHub fails",
+          "error_type": "httpx.HTTPError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "settings.github_client_id must be configured",
+        "settings.github_client_secret must be configured",
+        "settings.frontend_url must be configured",
+        "settings.jwt_expiry_days must be configured",
+        "code must be valid GitHub OAuth code"
+      ],
+      "postconditions": [
+        "User record created or updated in database",
+        "JWT session cookie set on response with httponly, secure, samesite=lax",
+        "Returns redirect to settings.frontend_url/dashboard",
+        "Database transaction committed"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Makes HTTP POST to GitHub token exchange endpoint",
+        "Makes HTTP GET to GitHub user API",
+        "Creates or updates User in database",
+        "Commits database transaction",
+        "Sets session cookie on HTTP response"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "GitHub token exchange endpoint",
+          "description": "Makes HTTP POST to GitHub token exchange endpoint"
+        },
+        {
+          "kind": "network_call",
+          "target": "GitHub user API",
+          "description": "Makes HTTP GET to GitHub user API"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Creates or updates User in database"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "database",
+          "description": "Commits database transaction"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "HTTP response",
+          "description": "Sets session cookie on HTTP response"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "logout",
+      "description": "Logs user out by deleting the session cookie and returning 204 No Content",
+      "inputs": [],
+      "output_type": "Response",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns Response with status_code=204",
+        "Session cookie is deleted from response"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "Deletes session cookie"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "HTTP response",
+          "description": "Deletes session cookie"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "me",
+      "description": "Returns current authenticated user's profile information as JSON",
+      "inputs": [
+        {
+          "name": "user",
+          "type_ref": "User",
+          "required": false,
+          "default": "Depends(get_current_user)",
+          "description": "Current authenticated user from dependency",
+          "validators": []
+        }
+      ],
+      "output_type": "dict",
+      "error_cases": [
+        {
+          "name": "not_authenticated",
+          "condition": "get_current_user dependency raises HTTPException",
+          "error_type": "HTTPException",
+          "error_data": {
+            "status_code": "401",
+            "detail": "Not authenticated"
+          }
+        }
+      ],
+      "preconditions": [
+        "User must be authenticated (get_current_user dependency must succeed)"
+      ],
+      "postconditions": [
+        "Returns dictionary with id, username, display_name, avatar_url, bio",
+        "id field is stringified UUID"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "uuid",
+    "datetime",
+    "httpx",
+    "jwt",
+    "fastapi",
+    "sqlalchemy",
+    "backend.config",
+    "backend.database",
+    "backend.models"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'",
+    "GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'",
+    "GITHUB_USER_URL = 'https://api.github.com/user'",
+    "Session cookie key is always 'session'",
+    "Session cookies are always httponly=True, secure=True, samesite='lax'",
+    "JWT tokens contain 'sub', 'exp', and 'iat' claims",
+    "OAuth scope requested is 'read:user user:email'",
+    "Logout always returns status 204"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

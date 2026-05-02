@@ -1,0 +1,63 @@
+{
+  "component_id": "contracts_backend_api_main_interface",
+  "name": "Backend API Main Interface",
+  "description": "FastAPI application entry point for centaur.tools API - a community-governed registry for AI tools with provenance tracking. Assembles routers for auth, feed, forum, notifications, provenance, registry, search, users, and voting subsystems, configures cookie-based authentication dependency override, and exposes a health check endpoint.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "health",
+      "description": "Health check endpoint that returns a static success response indicating the API is operational.",
+      "inputs": [],
+      "output_type": "dict[str, str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dictionary with 'status' key set to 'ok'",
+        "HTTP 200 status code"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "backend.api.auth.router",
+    "backend.api.feed.router",
+    "backend.api.forum.router",
+    "backend.api.notifications.router",
+    "backend.api.provenance.router",
+    "backend.api.registry.router",
+    "backend.api.search.router",
+    "backend.api.users.router",
+    "backend.api.voting.router",
+    "backend.api.auth.dependencies"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "FastAPI app instance initialized with title='centaur.tools API', version='1.0.0'",
+    "Dependency override maps placeholder_get_current_user to real_get_current_user for cookie-based auth",
+    "Nine routers included in fixed order: auth, feed, users, registry, search, voting, provenance, forum, notifications"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

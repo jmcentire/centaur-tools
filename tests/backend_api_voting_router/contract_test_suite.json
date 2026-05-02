@@ -1,0 +1,336 @@
+{
+  "component_id": "backend_api_voting_router",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_vote_useful_happy_path",
+      "description": "Successfully cast a vote for an active tool when user has not voted before",
+      "function": "vote_useful",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug, authenticated user, active tool in database, no existing vote",
+      "expected_output_description": "Returns {'status': 'voted', 'vote_count': <count>} where vote_count >= 1",
+      "expected_error": "",
+      "assertions": [
+        "Response status is 'voted'",
+        "Response contains vote_count key",
+        "vote_count is >= 1",
+        "ToolVote record is created in database"
+      ]
+    },
+    {
+      "id": "test_vote_useful_already_voted",
+      "description": "User attempts to vote for a tool they have already voted for",
+      "function": "vote_useful",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug, authenticated user, existing ToolVote record for this user and tool",
+      "expected_output_description": "Returns {'status': 'already_voted'} without modifying database",
+      "expected_error": "",
+      "assertions": [
+        "Response status is 'already_voted'",
+        "No additional ToolVote records created",
+        "Database state unchanged"
+      ]
+    },
+    {
+      "id": "test_vote_useful_tool_not_found",
+      "description": "Attempt to vote for a non-existent tool slug",
+      "function": "vote_useful",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Invalid slug that does not exist in database",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error",
+        "No ToolVote record created"
+      ]
+    },
+    {
+      "id": "test_vote_useful_inactive_tool",
+      "description": "Attempt to vote for a tool where is_active is False",
+      "function": "vote_useful",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug but tool.is_active == False",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error",
+        "No ToolVote record created"
+      ]
+    },
+    {
+      "id": "test_vote_useful_vote_count_consistency",
+      "description": "Vote count reflects accurate total after voting",
+      "function": "vote_useful",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with existing votes, new user voting",
+      "expected_output_description": "vote_count matches actual database count",
+      "expected_error": "",
+      "assertions": [
+        "Returned vote_count equals actual database count",
+        "Vote count increments by exactly 1"
+      ]
+    },
+    {
+      "id": "test_remove_vote_happy_path",
+      "description": "Successfully remove an existing vote",
+      "function": "remove_vote",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug, authenticated user, existing ToolVote record",
+      "expected_output_description": "Returns {'status': 'removed', 'vote_count': <count>} where vote_count >= 0",
+      "expected_error": "",
+      "assertions": [
+        "Response status is 'removed'",
+        "Response contains vote_count key",
+        "vote_count is >= 0",
+        "ToolVote record is deleted from database"
+      ]
+    },
+    {
+      "id": "test_remove_vote_not_voted",
+      "description": "User attempts to remove a vote they never cast",
+      "function": "remove_vote",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug, authenticated user, no existing ToolVote record",
+      "expected_output_description": "Returns {'status': 'not_voted'} without modifying database",
+      "expected_error": "",
+      "assertions": [
+        "Response status is 'not_voted'",
+        "Database state unchanged"
+      ]
+    },
+    {
+      "id": "test_remove_vote_tool_not_found",
+      "description": "Attempt to remove vote for non-existent tool",
+      "function": "remove_vote",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Invalid slug that does not exist in database",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error",
+        "Database state unchanged"
+      ]
+    },
+    {
+      "id": "test_remove_vote_inactive_tool",
+      "description": "Attempt to remove vote for inactive tool",
+      "function": "remove_vote",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid slug but tool.is_active == False",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error",
+        "No deletion occurs"
+      ]
+    },
+    {
+      "id": "test_remove_vote_count_consistency",
+      "description": "Vote count reflects accurate total after removal",
+      "function": "remove_vote",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Tool with multiple votes, user removing their vote",
+      "expected_output_description": "vote_count matches actual database count after removal",
+      "expected_error": "",
+      "assertions": [
+        "Returned vote_count equals actual database count",
+        "Vote count decrements by exactly 1"
+      ]
+    },
+    {
+      "id": "test_vote_useful_empty_slug",
+      "description": "Attempt to vote with empty string slug",
+      "function": "vote_useful",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty string slug",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error or handles gracefully"
+      ]
+    },
+    {
+      "id": "test_remove_vote_empty_slug",
+      "description": "Attempt to remove vote with empty string slug",
+      "function": "remove_vote",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty string slug",
+      "expected_output_description": "",
+      "expected_error": "tool_not_found",
+      "assertions": [
+        "Raises tool_not_found error or handles gracefully"
+      ]
+    },
+    {
+      "id": "test_vote_useful_user_isolation",
+      "description": "Voting by one user does not affect another user's vote status",
+      "function": "vote_useful",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "User A votes, User B votes for same tool",
+      "expected_output_description": "Both users can vote independently",
+      "expected_error": "",
+      "assertions": [
+        "User A's vote succeeds",
+        "User B's vote succeeds",
+        "Two distinct ToolVote records exist",
+        "Vote count reflects both votes"
+      ]
+    },
+    {
+      "id": "test_remove_vote_user_isolation",
+      "description": "Removing vote by one user does not affect another user's vote",
+      "function": "remove_vote",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "User A and User B have voted, User A removes vote",
+      "expected_output_description": "Only User A's vote is removed",
+      "expected_error": "",
+      "assertions": [
+        "User A's vote is removed",
+        "User B's vote still exists",
+        "Vote count decrements by 1"
+      ]
+    },
+    {
+      "id": "test_vote_useful_special_characters_slug",
+      "description": "Handle slugs with special characters",
+      "function": "vote_useful",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Slug containing hyphens, underscores, numbers",
+      "expected_output_description": "Processes slug correctly if tool exists",
+      "expected_error": "",
+      "assertions": [
+        "Slug is handled correctly",
+        "No errors from slug format"
+      ]
+    },
+    {
+      "id": "test_vote_useful_concurrent_votes",
+      "description": "Multiple concurrent vote attempts by same user",
+      "function": "vote_useful",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Same user attempts to vote concurrently multiple times",
+      "expected_output_description": "Only one vote is recorded, others return already_voted",
+      "expected_error": "",
+      "assertions": [
+        "Exactly one ToolVote record created",
+        "At least one response is 'voted'",
+        "Subsequent responses are 'already_voted'"
+      ]
+    },
+    {
+      "id": "test_vote_removal_idempotency",
+      "description": "Removing vote multiple times is idempotent",
+      "function": "remove_vote",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "User removes vote, then attempts to remove again",
+      "expected_output_description": "First removal succeeds, second returns not_voted",
+      "expected_error": "",
+      "assertions": [
+        "First removal returns 'removed'",
+        "Second removal returns 'not_voted'",
+        "No errors occur"
+      ]
+    },
+    {
+      "id": "test_vote_count_never_negative",
+      "description": "Vote count never goes below zero",
+      "function": "remove_vote",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Remove the last vote from a tool",
+      "expected_output_description": "vote_count returns 0, not negative",
+      "expected_error": "",
+      "assertions": [
+        "vote_count >= 0",
+        "vote_count equals 0 when all votes removed"
+      ]
+    },
+    {
+      "id": "test_vote_useful_database_error",
+      "description": "Handle database connection errors during voting",
+      "function": "vote_useful",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Database session raises exception during operation",
+      "expected_output_description": "",
+      "expected_error": "database error",
+      "assertions": [
+        "Exception is raised or handled",
+        "No partial state committed"
+      ]
+    },
+    {
+      "id": "test_remove_vote_database_error",
+      "description": "Handle database connection errors during vote removal",
+      "function": "remove_vote",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Database session raises exception during operation",
+      "expected_output_description": "",
+      "expected_error": "database error",
+      "assertions": [
+        "Exception is raised or handled",
+        "No partial state committed"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract-based test suite for backend_api_voting_router\n\nThis test suite verifies the voting router implementation against its contract.\nTests cover happy paths, edge cases, error cases, and invariants using mocked\ndependencies.\n\nTest Categories:\n- Happy Path: Standard successful operations\n- Edge Cases: Boundary conditions, special inputs, concurrent access\n- Error Cases: Tool not found, inactive tools, database errors\n- Invariants: Vote count consistency, user isolation, idempotency\n\"\"\"\n\nimport pytest\nfrom unittest.mock import AsyncMock, Mock, MagicMock, patch\nfrom typing import Any, Dict\nimport asyncio\n\n# Import the component under test\nfrom backend.api.voting.router import vote_useful, remove_vote\n\n\n# ============================================================================\n# Test Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef mock_user():\n    \"\"\"Create a mock authenticated user\"\"\"\n    user = Mock()\n    user.id = 1\n    user.username = \"test_user\"\n    user.email = \"test@example.com\"\n    user.is_active = True\n    return user\n\n\n@pytest.fixture\ndef mock_user_2():\n    \"\"\"Create a second mock user for isolation tests\"\"\"\n    user = Mock()\n    user.id = 2\n    user.username = \"test_user_2\"\n    user.email = \"test2@example.com\"\n    user.is_active = True\n    return user\n\n\n@pytest.fixture\ndef mock_tool():\n    \"\"\"Create a mock active tool\"\"\"\n    tool = Mock()\n    tool.id = 1\n    tool.slug = \"test-tool\"\n    tool.name = \"Test Tool\"\n    tool.is_active = True\n    return tool\n\n\n@pytest.fixture\ndef mock_inactive_tool():\n    \"\"\"Create a mock inactive tool\"\"\"\n    tool = Mock()\n    tool.id = 2\n    tool.slug = \"inactive-tool\"\n    tool.name = \"Inactive Tool\"\n    tool.is_active = False\n    return tool\n\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Create a mock AsyncSession\"\"\"\n    session = AsyncMock()\n    session.commit = AsyncMock()\n    session.rollback = AsyncMock()\n    session.refresh = AsyncMock()\n    session.add = Mock()\n    session.delete = Mock()\n    return session\n\n\n@pytest.fixture\ndef mock_tool_vote():\n    \"\"\"Create a mock ToolVote record\"\"\"\n    vote = Mock()\n    vote.id = 1\n    vote.user_id = 1\n    vote.tool_id = 1\n    return vote\n\n\n# ============================================================================\n# Helper Functions\n# ============================================================================\n\ndef create_mock_query_result(result=None, scalar_result=None):\n    \"\"\"Create a mock query result\"\"\"\n    mock_result = AsyncMock()\n    if scalar_result is not None:\n        mock_result.scalar_one_or_none = AsyncMock(return_value=scalar_result)\n        mock_result.scalar = AsyncMock(return_value=scalar_result)\n    if result is not None:\n        mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=result)))\n    return mock_result\n\n\ndef setup_execute_mock(session, *results):\n    \"\"\"Setup session.execute to return multiple results in sequence\"\"\"\n    session.execute = AsyncMock(side_effect=results)\n\n\nclass ToolNotFoundError(Exception):\n    \"\"\"Custom exception for tool not found\"\"\"\n    pass\n\n\n# ============================================================================\n# Happy Path Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_useful_happy_path(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: Successfully cast a vote for an active tool when user has not voted before\n    Expected: Returns {'status': 'voted', 'vote_count': <count>} where vote_count >= 1\n    \"\"\"\n    # Setup: Tool exists, no existing vote, vote count after is 1\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    vote_count_result = create_mock_query_result(scalar_result=1)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"status\"] == \"voted\"\n    assert \"vote_count\" in result\n    assert result[\"vote_count\"] >= 1\n    assert result[\"vote_count\"] == 1\n    assert mock_db_session.add.called\n    assert mock_db_session.commit.called\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_happy_path(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: Successfully remove an existing vote\n    Expected: Returns {'status': 'removed', 'vote_count': <count>} where vote_count >= 0\n    \"\"\"\n    # Setup: Tool exists, vote exists, vote count after is 0\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    vote_count_result = create_mock_query_result(scalar_result=0)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"status\"] == \"removed\"\n    assert \"vote_count\" in result\n    assert result[\"vote_count\"] >= 0\n    assert result[\"vote_count\"] == 0\n    assert mock_db_session.delete.called\n    assert mock_db_session.commit.called\n\n\n# ============================================================================\n# Edge Case Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_useful_already_voted(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: User attempts to vote for a tool they have already voted for\n    Expected: Returns {'status': 'already_voted'} without modifying database\n    \"\"\"\n    # Setup: Tool exists, vote already exists\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result\n    )\n    \n    # Execute\n    result = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"status\"] == \"already_voted\"\n    assert \"vote_count\" not in result or result.get(\"vote_count\") is None\n    assert not mock_db_session.add.called\n    assert not mock_db_session.commit.called\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_not_voted(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: User attempts to remove a vote they never cast\n    Expected: Returns {'status': 'not_voted'} without modifying database\n    \"\"\"\n    # Setup: Tool exists, no vote exists\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result\n    )\n    \n    # Execute\n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"status\"] == \"not_voted\"\n    assert \"vote_count\" not in result or result.get(\"vote_count\") is None\n    assert not mock_db_session.delete.called\n    assert not mock_db_session.commit.called\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_empty_slug(mock_db_session, mock_user):\n    \"\"\"\n    Test: Attempt to vote with empty string slug\n    Expected: Raises tool_not_found error or handles gracefully\n    \"\"\"\n    # Setup: Empty slug results in no tool found\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found or similar\n        await vote_useful(slug=\"\", user=mock_user, db=mock_db_session)\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_empty_slug(mock_db_session, mock_user):\n    \"\"\"\n    Test: Attempt to remove vote with empty string slug\n    Expected: Raises tool_not_found error or handles gracefully\n    \"\"\"\n    # Setup: Empty slug results in no tool found\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found or similar\n        await remove_vote(slug=\"\", user=mock_user, db=mock_db_session)\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_special_characters_slug(mock_db_session, mock_user):\n    \"\"\"\n    Test: Handle slugs with special characters\n    Expected: Processes slug correctly if tool exists\n    \"\"\"\n    # Setup: Tool with special characters in slug\n    special_tool = Mock()\n    special_tool.id = 1\n    special_tool.slug = \"test-tool_123-abc\"\n    special_tool.is_active = True\n    \n    tool_query_result = create_mock_query_result(scalar_result=special_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    vote_count_result = create_mock_query_result(scalar_result=1)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await vote_useful(slug=\"test-tool_123-abc\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"status\"] == \"voted\"\n    assert result[\"vote_count\"] == 1\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_concurrent_votes(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: Multiple concurrent vote attempts by same user\n    Expected: Only one vote is recorded, others return already_voted\n    \"\"\"\n    # Setup: First call succeeds, subsequent calls find existing vote\n    tool_query_result_1 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_1 = create_mock_query_result(scalar_result=None)\n    vote_count_result_1 = create_mock_query_result(scalar_result=1)\n    \n    tool_query_result_2 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_2 = create_mock_query_result(scalar_result=Mock())\n    \n    mock_db_session.execute = AsyncMock(side_effect=[\n        tool_query_result_1,\n        existing_vote_result_1,\n        vote_count_result_1,\n        tool_query_result_2,\n        existing_vote_result_2,\n    ])\n    \n    # Execute concurrently\n    results = await asyncio.gather(\n        vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session),\n        vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session),\n    )\n    \n    # Assert\n    statuses = [r[\"status\"] for r in results]\n    assert \"voted\" in statuses\n    assert \"already_voted\" in statuses or statuses.count(\"voted\") == 1\n\n\n@pytest.mark.asyncio\nasync def test_vote_removal_idempotency(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: Removing vote multiple times is idempotent\n    Expected: First removal succeeds, second returns not_voted\n    \"\"\"\n    # Setup: First removal finds vote, second removal finds no vote\n    tool_query_result_1 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_1 = create_mock_query_result(scalar_result=mock_tool_vote)\n    vote_count_result_1 = create_mock_query_result(scalar_result=0)\n    \n    tool_query_result_2 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_2 = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result_1,\n        existing_vote_result_1,\n        vote_count_result_1,\n        tool_query_result_2,\n        existing_vote_result_2\n    )\n    \n    # Execute\n    result1 = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    result2 = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result1[\"status\"] == \"removed\"\n    assert result2[\"status\"] == \"not_voted\"\n\n\n# ============================================================================\n# Error Case Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_useful_tool_not_found(mock_db_session, mock_user):\n    \"\"\"\n    Test: Attempt to vote for a non-existent tool slug\n    Expected: Raises tool_not_found error\n    \"\"\"\n    # Setup: No tool found\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found\n        await vote_useful(slug=\"nonexistent-tool\", user=mock_user, db=mock_db_session)\n    \n    assert not mock_db_session.add.called\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_inactive_tool(mock_db_session, mock_user, mock_inactive_tool):\n    \"\"\"\n    Test: Attempt to vote for a tool where is_active is False\n    Expected: Raises tool_not_found error\n    \"\"\"\n    # Setup: Tool exists but is inactive (treated as not found)\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found\n        await vote_useful(slug=\"inactive-tool\", user=mock_user, db=mock_db_session)\n    \n    assert not mock_db_session.add.called\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_tool_not_found(mock_db_session, mock_user):\n    \"\"\"\n    Test: Attempt to remove vote for non-existent tool\n    Expected: Raises tool_not_found error\n    \"\"\"\n    # Setup: No tool found\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found\n        await remove_vote(slug=\"nonexistent-tool\", user=mock_user, db=mock_db_session)\n    \n    assert not mock_db_session.delete.called\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_inactive_tool(mock_db_session, mock_user, mock_inactive_tool):\n    \"\"\"\n    Test: Attempt to remove vote for inactive tool\n    Expected: Raises tool_not_found error\n    \"\"\"\n    # Setup: Tool exists but is inactive (treated as not found)\n    tool_query_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(mock_db_session, tool_query_result)\n    \n    # Execute & Assert\n    with pytest.raises(Exception):  # Should raise tool_not_found\n        await remove_vote(slug=\"inactive-tool\", user=mock_user, db=mock_db_session)\n    \n    assert not mock_db_session.delete.called\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_database_error(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: Handle database connection errors during voting\n    Expected: Exception is raised or handled, no partial state committed\n    \"\"\"\n    # Setup: Database raises exception\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    \n    mock_db_session.execute = AsyncMock(side_effect=[\n        tool_query_result,\n        existing_vote_result,\n        Exception(\"Database connection error\")\n    ])\n    \n    mock_db_session.commit = AsyncMock(side_effect=Exception(\"Database connection error\"))\n    \n    # Execute & Assert\n    with pytest.raises(Exception):\n        await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_database_error(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: Handle database connection errors during vote removal\n    Expected: Exception is raised or handled, no partial state committed\n    \"\"\"\n    # Setup: Database raises exception\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    \n    mock_db_session.execute = AsyncMock(side_effect=[\n        tool_query_result,\n        existing_vote_result,\n        Exception(\"Database connection error\")\n    ])\n    \n    mock_db_session.commit = AsyncMock(side_effect=Exception(\"Database connection error\"))\n    \n    # Execute & Assert\n    with pytest.raises(Exception):\n        await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n\n\n# ============================================================================\n# Invariant Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_useful_vote_count_consistency(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: Vote count reflects accurate total after voting\n    Expected: vote_count matches actual database count\n    \"\"\"\n    # Setup: Tool has 5 existing votes, adding one makes 6\n    initial_count = 5\n    expected_count = 6\n    \n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    vote_count_result = create_mock_query_result(scalar_result=expected_count)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"vote_count\"] == expected_count\n    assert result[\"vote_count\"] > initial_count\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_count_consistency(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: Vote count reflects accurate total after removal\n    Expected: vote_count matches actual database count after removal\n    \"\"\"\n    # Setup: Tool has 3 votes, removing one makes 2\n    expected_count = 2\n    \n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    vote_count_result = create_mock_query_result(scalar_result=expected_count)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"vote_count\"] == expected_count\n\n\n@pytest.mark.asyncio\nasync def test_vote_useful_user_isolation(mock_db_session, mock_user, mock_user_2, mock_tool):\n    \"\"\"\n    Test: Voting by one user does not affect another user's vote status\n    Expected: Both users can vote independently\n    \"\"\"\n    # Setup: User 1 votes\n    tool_query_result_1 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_1 = create_mock_query_result(scalar_result=None)\n    vote_count_result_1 = create_mock_query_result(scalar_result=1)\n    \n    # User 2 votes\n    tool_query_result_2 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_2 = create_mock_query_result(scalar_result=None)\n    vote_count_result_2 = create_mock_query_result(scalar_result=2)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result_1,\n        existing_vote_result_1,\n        vote_count_result_1,\n        tool_query_result_2,\n        existing_vote_result_2,\n        vote_count_result_2\n    )\n    \n    # Execute\n    result1 = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    result2 = await vote_useful(slug=\"test-tool\", user=mock_user_2, db=mock_db_session)\n    \n    # Assert\n    assert result1[\"status\"] == \"voted\"\n    assert result2[\"status\"] == \"voted\"\n    assert result2[\"vote_count\"] == 2\n    assert mock_db_session.add.call_count == 2\n\n\n@pytest.mark.asyncio\nasync def test_remove_vote_user_isolation(mock_db_session, mock_user, mock_user_2, mock_tool):\n    \"\"\"\n    Test: Removing vote by one user does not affect another user's vote\n    Expected: Only User A's vote is removed\n    \"\"\"\n    # Setup: User 1 removes vote (exists), count goes from 2 to 1\n    mock_tool_vote_1 = Mock()\n    mock_tool_vote_1.id = 1\n    mock_tool_vote_1.user_id = mock_user.id\n    mock_tool_vote_1.tool_id = mock_tool.id\n    \n    tool_query_result_1 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_1 = create_mock_query_result(scalar_result=mock_tool_vote_1)\n    vote_count_result_1 = create_mock_query_result(scalar_result=1)\n    \n    # User 2's vote still exists (checking they still have a vote)\n    mock_tool_vote_2 = Mock()\n    mock_tool_vote_2.id = 2\n    mock_tool_vote_2.user_id = mock_user_2.id\n    mock_tool_vote_2.tool_id = mock_tool.id\n    \n    tool_query_result_2 = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result_2 = create_mock_query_result(scalar_result=mock_tool_vote_2)\n    vote_count_result_2 = create_mock_query_result(scalar_result=0)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result_1,\n        existing_vote_result_1,\n        vote_count_result_1,\n        tool_query_result_2,\n        existing_vote_result_2,\n        vote_count_result_2\n    )\n    \n    # Execute\n    result1 = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    result2 = await remove_vote(slug=\"test-tool\", user=mock_user_2, db=mock_db_session)\n    \n    # Assert\n    assert result1[\"status\"] == \"removed\"\n    assert result1[\"vote_count\"] == 1\n    assert result2[\"status\"] == \"removed\"\n    assert mock_db_session.delete.call_count == 2\n\n\n@pytest.mark.asyncio\nasync def test_vote_count_never_negative(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: Vote count never goes below zero\n    Expected: vote_count returns 0, not negative\n    \"\"\"\n    # Setup: Remove last vote, count becomes 0\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    vote_count_result = create_mock_query_result(scalar_result=0)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    # Execute\n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    # Assert\n    assert result[\"vote_count\"] >= 0\n    assert result[\"vote_count\"] == 0\n\n\n# ============================================================================\n# Response Type Validation Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_vote_response_structure(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: VoteResponse has correct structure\n    Expected: Returns dict with 'status' and 'vote_count' keys\n    \"\"\"\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    vote_count_result = create_mock_query_result(scalar_result=1)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    result = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    assert isinstance(result, dict)\n    assert \"status\" in result\n    assert \"vote_count\" in result\n    assert isinstance(result[\"status\"], str)\n    assert isinstance(result[\"vote_count\"], int)\n\n\n@pytest.mark.asyncio\nasync def test_already_voted_response_structure(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: AlreadyVotedResponse has correct structure\n    Expected: Returns dict with 'status' key\n    \"\"\"\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result\n    )\n    \n    result = await vote_useful(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    assert isinstance(result, dict)\n    assert \"status\" in result\n    assert result[\"status\"] == \"already_voted\"\n    assert isinstance(result[\"status\"], str)\n\n\n@pytest.mark.asyncio\nasync def test_removed_vote_response_structure(mock_db_session, mock_user, mock_tool, mock_tool_vote):\n    \"\"\"\n    Test: RemovedVoteResponse has correct structure\n    Expected: Returns dict with 'status' and 'vote_count' keys\n    \"\"\"\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=mock_tool_vote)\n    vote_count_result = create_mock_query_result(scalar_result=0)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result,\n        vote_count_result\n    )\n    \n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    assert isinstance(result, dict)\n    assert \"status\" in result\n    assert \"vote_count\" in result\n    assert isinstance(result[\"status\"], str)\n    assert isinstance(result[\"vote_count\"], int)\n\n\n@pytest.mark.asyncio\nasync def test_not_voted_response_structure(mock_db_session, mock_user, mock_tool):\n    \"\"\"\n    Test: NotVotedResponse has correct structure\n    Expected: Returns dict with 'status' key\n    \"\"\"\n    tool_query_result = create_mock_query_result(scalar_result=mock_tool)\n    existing_vote_result = create_mock_query_result(scalar_result=None)\n    \n    setup_execute_mock(\n        mock_db_session,\n        tool_query_result,\n        existing_vote_result\n    )\n    \n    result = await remove_vote(slug=\"test-tool\", user=mock_user, db=mock_db_session)\n    \n    assert isinstance(result, dict)\n    assert \"status\" in result\n    assert result[\"status\"] == \"not_voted\"\n    assert isinstance(result[\"status\"], str)\n"
+}

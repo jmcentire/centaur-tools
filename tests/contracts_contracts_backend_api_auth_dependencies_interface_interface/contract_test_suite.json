@@ -1,0 +1,372 @@
+{
+  "component_id": "contracts_contracts_backend_api_auth_dependencies_interface_interface",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_get_current_user_happy_path",
+      "description": "Verify get_current_user returns User object when all preconditions met",
+      "function": "get_current_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid session JWT with valid UUID sub claim, user exists in database",
+      "expected_output_description": "Returns User object with id matching JWT sub claim",
+      "expected_error": "",
+      "assertions": [
+        "Result is User instance",
+        "User.id equals UUID from JWT sub claim",
+        "Database was queried exactly once"
+      ]
+    },
+    {
+      "id": "test_get_current_user_missing_session",
+      "description": "Verify get_current_user raises HTTPException(401) when session cookie is None",
+      "function": "get_current_user",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session parameter is None",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401 (missing_session)",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401",
+        "Database not queried"
+      ]
+    },
+    {
+      "id": "test_get_current_user_invalid_jwt",
+      "description": "Verify get_current_user raises HTTPException(401) when JWT decode fails",
+      "function": "get_current_user",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is malformed JWT that decode_jwt cannot parse",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401 (invalid_session)",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401",
+        "decode_jwt was called",
+        "Database not queried"
+      ]
+    },
+    {
+      "id": "test_get_current_user_invalid_uuid",
+      "description": "Verify get_current_user raises HTTPException(401) when sub claim is not valid UUID",
+      "function": "get_current_user",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "JWT decodes successfully but sub claim cannot be parsed as UUID",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401 (invalid_session)",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401",
+        "uuid.UUID raised ValueError",
+        "Database not queried"
+      ]
+    },
+    {
+      "id": "test_get_current_user_user_not_found",
+      "description": "Verify get_current_user raises HTTPException(401) when user does not exist in database",
+      "function": "get_current_user",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid JWT with valid UUID, but database query returns None",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401 (user_not_found)",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401",
+        "Database was queried",
+        "Query returned None"
+      ]
+    },
+    {
+      "id": "test_get_current_user_edge_empty_string",
+      "description": "Verify get_current_user handles empty string session appropriately",
+      "function": "get_current_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is empty string (not None)",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401"
+      ]
+    },
+    {
+      "id": "test_get_current_user_edge_whitespace",
+      "description": "Verify get_current_user rejects whitespace-only session",
+      "function": "get_current_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session contains only whitespace characters",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401"
+      ]
+    },
+    {
+      "id": "test_get_current_user_edge_long_token",
+      "description": "Verify get_current_user handles very long token strings",
+      "function": "get_current_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is extremely long string (10000+ chars)",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401"
+      ]
+    },
+    {
+      "id": "test_get_current_user_edge_special_chars",
+      "description": "Verify get_current_user handles tokens with special characters",
+      "function": "get_current_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session contains unicode, emoji, special characters",
+      "expected_output_description": "",
+      "expected_error": "HTTPException with status_code 401",
+      "assertions": [
+        "HTTPException raised",
+        "status_code is 401"
+      ]
+    },
+    {
+      "id": "test_get_current_user_invariant_never_none",
+      "description": "Verify get_current_user never returns None (always User or raises)",
+      "function": "get_current_user",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple scenarios: valid, invalid, missing session",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Result is User OR HTTPException raised",
+        "Result is never None"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_happy_path",
+      "description": "Verify get_optional_user returns User when session valid and user exists",
+      "function": "get_optional_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid session JWT with valid UUID sub claim, user exists in database",
+      "expected_output_description": "Returns User object with id matching JWT sub claim",
+      "expected_error": "",
+      "assertions": [
+        "Result is User instance",
+        "User.id equals UUID from JWT sub claim",
+        "Database was queried"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_missing_session",
+      "description": "Verify get_optional_user returns None when session is None",
+      "function": "get_optional_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session parameter is None",
+      "expected_output_description": "Returns None without raising exception",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised",
+        "Database not queried"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_invalid_jwt",
+      "description": "Verify get_optional_user returns None when JWT decode fails",
+      "function": "get_optional_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is malformed JWT that decode_jwt cannot parse",
+      "expected_output_description": "Returns None without raising exception",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised",
+        "decode_jwt was called"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_invalid_uuid",
+      "description": "Verify get_optional_user returns None when sub claim is not valid UUID",
+      "function": "get_optional_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "JWT decodes successfully but sub claim cannot be parsed as UUID",
+      "expected_output_description": "Returns None without raising exception",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_user_not_found",
+      "description": "Verify get_optional_user returns None when user does not exist in database",
+      "function": "get_optional_user",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid JWT with valid UUID, but database query returns None",
+      "expected_output_description": "Returns None without raising exception",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised",
+        "Database was queried"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_edge_empty_string",
+      "description": "Verify get_optional_user returns None for empty string session",
+      "function": "get_optional_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is empty string",
+      "expected_output_description": "Returns None",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_edge_whitespace",
+      "description": "Verify get_optional_user returns None for whitespace-only session",
+      "function": "get_optional_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session contains only whitespace",
+      "expected_output_description": "Returns None",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_edge_long_token",
+      "description": "Verify get_optional_user handles very long token strings",
+      "function": "get_optional_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session is extremely long string",
+      "expected_output_description": "Returns None",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_edge_special_chars",
+      "description": "Verify get_optional_user handles tokens with special characters",
+      "function": "get_optional_user",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "session contains unicode, emoji, special characters",
+      "expected_output_description": "Returns None",
+      "expected_error": "",
+      "assertions": [
+        "Result is None",
+        "No exception raised"
+      ]
+    },
+    {
+      "id": "test_get_optional_user_invariant_no_exceptions",
+      "description": "Verify get_optional_user never raises exceptions regardless of input",
+      "function": "get_optional_user",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Various invalid inputs that would cause get_current_user to raise",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "No exceptions raised",
+        "Result is User or None"
+      ]
+    },
+    {
+      "id": "test_invariant_user_id_extraction",
+      "description": "Verify both functions extract user_id from JWT sub claim as UUID consistently",
+      "function": "get_current_user",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Same valid JWT used for both functions",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Both functions query database with same UUID",
+        "UUID matches JWT sub claim"
+      ]
+    },
+    {
+      "id": "test_invariant_idempotency",
+      "description": "Verify calling functions multiple times with same token returns same user",
+      "function": "get_current_user",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Same valid session token called multiple times",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "All calls return same User object (same id)",
+        "User state unchanged between calls"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract test suite for Backend API Auth Dependencies Interface.\n\nTests verify authentication dependency functions get_current_user and \nget_optional_user against their behavioral contracts.\n\"\"\"\n\nimport pytest\nimport uuid\nfrom unittest.mock import AsyncMock, MagicMock, patch, call\nfrom fastapi import HTTPException\n\n# Import the component under test\nfrom contracts.contracts_backend_api_auth_dependencies_interface.interface import (\n    get_current_user,\n    get_optional_user,\n)\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef valid_user_id():\n    \"\"\"Factory fixture for valid UUID user IDs.\"\"\"\n    return uuid.uuid4()\n\n\n@pytest.fixture\ndef valid_user(valid_user_id):\n    \"\"\"Factory fixture for valid User objects.\"\"\"\n    user_mock = MagicMock()\n    user_mock.id = valid_user_id\n    user_mock.email = \"test@example.com\"\n    user_mock.name = \"Test User\"\n    return user_mock\n\n\n@pytest.fixture\ndef mock_db_session():\n    \"\"\"Fixture for mocked AsyncSession.\"\"\"\n    session = AsyncMock()\n    return session\n\n\n@pytest.fixture\ndef valid_jwt_payload(valid_user_id):\n    \"\"\"Factory fixture for valid JWT payload.\"\"\"\n    return {\"sub\": str(valid_user_id), \"exp\": 9999999999}\n\n\n@pytest.fixture\ndef valid_session_token():\n    \"\"\"Factory fixture for valid session JWT string.\"\"\"\n    return \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\"\n\n\n@pytest.fixture\ndef invalid_session_token():\n    \"\"\"Factory fixture for invalid JWT string.\"\"\"\n    return \"invalid.jwt.token\"\n\n\n# ============================================================================\n# Test Class: get_current_user\n# ============================================================================\n\nclass TestGetCurrentUser:\n    \"\"\"Test suite for get_current_user function - strict authentication.\"\"\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_happy_path(\n        self, mock_db_session, valid_user, valid_user_id, valid_jwt_payload\n    ):\n        \"\"\"Verify get_current_user returns User object when all preconditions met.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        # Mock database query to return user\n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = valid_user\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act\n            result = await get_current_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is not None, \"Result should not be None\"\n            assert result.id == valid_user_id, \"User.id should match JWT sub claim\"\n            mock_decode.assert_called_once_with(session_token)\n            mock_db_session.execute.assert_called_once()\n            assert result == valid_user, \"Should return the User object from database\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_missing_session(self, mock_db_session):\n        \"\"\"Verify get_current_user raises HTTPException(401) when session cookie is None.\"\"\"\n        # Arrange\n        session_token = None\n        \n        # Act & Assert\n        with pytest.raises(HTTPException) as exc_info:\n            await get_current_user(mock_db_session, session_token)\n        \n        assert exc_info.value.status_code == 401, \"Should raise 401 for missing session\"\n        mock_db_session.execute.assert_not_called()\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_invalid_jwt(self, mock_db_session):\n        \"\"\"Verify get_current_user raises HTTPException(401) when JWT decode fails.\"\"\"\n        # Arrange\n        session_token = \"malformed.jwt.token\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"JWT decode error\")\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for invalid JWT\"\n            mock_decode.assert_called_once_with(session_token)\n            mock_db_session.execute.assert_not_called()\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_invalid_uuid(self, mock_db_session):\n        \"\"\"Verify get_current_user raises HTTPException(401) when sub claim is not valid UUID.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        invalid_payload = {\"sub\": \"not-a-uuid\", \"exp\": 9999999999}\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = invalid_payload\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for invalid UUID\"\n            mock_decode.assert_called_once()\n            mock_db_session.execute.assert_not_called()\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_user_not_found(\n        self, mock_db_session, valid_user_id, valid_jwt_payload\n    ):\n        \"\"\"Verify get_current_user raises HTTPException(401) when user does not exist in database.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        # Mock database query to return None\n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = None\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 when user not found\"\n            mock_db_session.execute.assert_called_once()\n            assert mock_result.scalar_one_or_none.called, \"Query should have been executed\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_edge_empty_string(self, mock_db_session):\n        \"\"\"Verify get_current_user handles empty string session appropriately.\"\"\"\n        # Arrange\n        session_token = \"\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Empty token\")\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for empty string\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_edge_whitespace(self, mock_db_session):\n        \"\"\"Verify get_current_user rejects whitespace-only session.\"\"\"\n        # Arrange\n        session_token = \"   \\t\\n  \"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Whitespace token\")\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for whitespace\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_edge_long_token(self, mock_db_session):\n        \"\"\"Verify get_current_user handles very long token strings.\"\"\"\n        # Arrange\n        session_token = \"a\" * 10000\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Token too long\")\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for long token\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_edge_special_chars(self, mock_db_session):\n        \"\"\"Verify get_current_user handles tokens with special characters.\"\"\"\n        # Arrange\n        session_token = \"🔐🚀特殊字符!@#$%^&*()\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Special chars in token\")\n            \n            # Act & Assert\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            \n            assert exc_info.value.status_code == 401, \"Should raise 401 for special chars\"\n\n    @pytest.mark.asyncio\n    async def test_get_current_user_invariant_never_none(\n        self, mock_db_session, valid_user, valid_jwt_payload\n    ):\n        \"\"\"Verify get_current_user never returns None (always User or raises).\"\"\"\n        # Test valid case - should return User\n        session_token = \"valid.token\"\n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = valid_user\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            result = await get_current_user(mock_db_session, session_token)\n            assert result is not None, \"Valid case should return User, not None\"\n            assert hasattr(result, 'id'), \"Result should be User object\"\n        \n        # Test invalid case - should raise, not return None\n        with pytest.raises(HTTPException):\n            await get_current_user(mock_db_session, None)\n\n\n# ============================================================================\n# Test Class: get_optional_user\n# ============================================================================\n\nclass TestGetOptionalUser:\n    \"\"\"Test suite for get_optional_user function - permissive authentication.\"\"\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_happy_path(\n        self, mock_db_session, valid_user, valid_user_id, valid_jwt_payload\n    ):\n        \"\"\"Verify get_optional_user returns User when session valid and user exists.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        # Mock database query to return user\n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = valid_user\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is not None, \"Result should not be None for valid session\"\n            assert result.id == valid_user_id, \"User.id should match JWT sub claim\"\n            mock_decode.assert_called_once_with(session_token)\n            mock_db_session.execute.assert_called_once()\n            assert result == valid_user, \"Should return the User object from database\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_missing_session(self, mock_db_session):\n        \"\"\"Verify get_optional_user returns None when session is None.\"\"\"\n        # Arrange\n        session_token = None\n        \n        # Act\n        result = await get_optional_user(mock_db_session, session_token)\n        \n        # Assert\n        assert result is None, \"Should return None for missing session\"\n        mock_db_session.execute.assert_not_called()\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_invalid_jwt(self, mock_db_session):\n        \"\"\"Verify get_optional_user returns None when JWT decode fails.\"\"\"\n        # Arrange\n        session_token = \"malformed.jwt.token\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"JWT decode error\")\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for invalid JWT\"\n            mock_decode.assert_called_once_with(session_token)\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_invalid_uuid(self, mock_db_session):\n        \"\"\"Verify get_optional_user returns None when sub claim is not valid UUID.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        invalid_payload = {\"sub\": \"not-a-uuid\", \"exp\": 9999999999}\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = invalid_payload\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for invalid UUID\"\n            mock_decode.assert_called_once()\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_user_not_found(\n        self, mock_db_session, valid_jwt_payload\n    ):\n        \"\"\"Verify get_optional_user returns None when user does not exist in database.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        # Mock database query to return None\n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = None\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None when user not found\"\n            mock_db_session.execute.assert_called_once()\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_edge_empty_string(self, mock_db_session):\n        \"\"\"Verify get_optional_user returns None for empty string session.\"\"\"\n        # Arrange\n        session_token = \"\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Empty token\")\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for empty string\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_edge_whitespace(self, mock_db_session):\n        \"\"\"Verify get_optional_user returns None for whitespace-only session.\"\"\"\n        # Arrange\n        session_token = \"   \\t\\n  \"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Whitespace token\")\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for whitespace\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_edge_long_token(self, mock_db_session):\n        \"\"\"Verify get_optional_user handles very long token strings.\"\"\"\n        # Arrange\n        session_token = \"a\" * 10000\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Token too long\")\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for long token\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_edge_special_chars(self, mock_db_session):\n        \"\"\"Verify get_optional_user handles tokens with special characters.\"\"\"\n        # Arrange\n        session_token = \"🔐🚀特殊字符!@#$%^&*()\"\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.side_effect = Exception(\"Special chars in token\")\n            \n            # Act\n            result = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result is None, \"Should return None for special chars\"\n\n    @pytest.mark.asyncio\n    async def test_get_optional_user_invariant_no_exceptions(self, mock_db_session):\n        \"\"\"Verify get_optional_user never raises exceptions regardless of input.\"\"\"\n        # Test various inputs that would cause get_current_user to raise\n        test_cases = [\n            None,\n            \"\",\n            \"invalid\",\n            \"🔐🚀\",\n            \"a\" * 10000,\n        ]\n        \n        for session_token in test_cases:\n            with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n                mock_decode.side_effect = Exception(\"Simulated error\")\n                \n                # Act - should not raise\n                result = await get_optional_user(mock_db_session, session_token)\n                \n                # Assert\n                assert result is None or hasattr(result, 'id'), \"Result must be User or None\"\n\n\n# ============================================================================\n# Test Class: Invariants\n# ============================================================================\n\nclass TestInvariants:\n    \"\"\"Test suite for cross-function invariants.\"\"\"\n\n    @pytest.mark.asyncio\n    async def test_invariant_user_id_extraction(\n        self, mock_db_session, valid_user, valid_user_id, valid_jwt_payload\n    ):\n        \"\"\"Verify both functions extract user_id from JWT sub claim as UUID consistently.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = valid_user\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act - call both functions\n            result1 = await get_current_user(mock_db_session, session_token)\n            \n            # Reset mocks\n            mock_db_session.reset_mock()\n            mock_decode.reset_mock()\n            mock_result.reset_mock()\n            mock_result.scalar_one_or_none.return_value = valid_user\n            mock_db_session.execute.return_value = mock_result\n            \n            mock_decode.return_value = valid_jwt_payload\n            result2 = await get_optional_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result1.id == result2.id, \"Both functions should extract same user_id\"\n            assert result1.id == valid_user_id, \"Extracted ID should match JWT sub claim\"\n\n    @pytest.mark.asyncio\n    async def test_invariant_idempotency(\n        self, mock_db_session, valid_user, valid_jwt_payload\n    ):\n        \"\"\"Verify calling functions multiple times with same token returns same user.\"\"\"\n        # Arrange\n        session_token = \"valid.jwt.token\"\n        \n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = valid_user\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act - call multiple times\n            result1 = await get_current_user(mock_db_session, session_token)\n            \n            mock_db_session.reset_mock()\n            mock_result.reset_mock()\n            mock_result.scalar_one_or_none.return_value = valid_user\n            mock_db_session.execute.return_value = mock_result\n            \n            result2 = await get_current_user(mock_db_session, session_token)\n            \n            mock_db_session.reset_mock()\n            mock_result.reset_mock()\n            mock_result.scalar_one_or_none.return_value = valid_user\n            mock_db_session.execute.return_value = mock_result\n            \n            result3 = await get_current_user(mock_db_session, session_token)\n            \n            # Assert\n            assert result1.id == result2.id == result3.id, \"All calls should return same user ID\"\n            assert result1.id == valid_user.id, \"User state should be unchanged\"\n\n    @pytest.mark.asyncio\n    async def test_invariant_behavioral_difference(\n        self, mock_db_session, valid_jwt_payload\n    ):\n        \"\"\"Verify behavioral difference: get_current_user raises, get_optional_user returns None.\"\"\"\n        # Arrange - user not found scenario\n        session_token = \"valid.jwt.token\"\n        \n        mock_result = AsyncMock()\n        mock_result.scalar_one_or_none.return_value = None\n        mock_db_session.execute.return_value = mock_result\n        \n        with patch('contracts_contracts_backend_api_auth_dependencies_interface_interface.decode_jwt') as mock_decode:\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act & Assert - get_current_user should raise\n            with pytest.raises(HTTPException) as exc_info:\n                await get_current_user(mock_db_session, session_token)\n            assert exc_info.value.status_code == 401\n            \n            # Reset mocks\n            mock_db_session.reset_mock()\n            mock_result.reset_mock()\n            mock_result.scalar_one_or_none.return_value = None\n            mock_db_session.execute.return_value = mock_result\n            mock_decode.reset_mock()\n            mock_decode.return_value = valid_jwt_payload\n            \n            # Act & Assert - get_optional_user should return None\n            result = await get_optional_user(mock_db_session, session_token)\n            assert result is None, \"get_optional_user should return None, not raise\"\n"
+}

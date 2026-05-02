@@ -1,0 +1,69 @@
+{
+  "component_id": "backend_api_main",
+  "name": "Backend API Main",
+  "description": "FastAPI application entry point for centaur.tools API - a community-governed registry for AI tools with provenance tracking. Assembles routers for auth, feed, forum, notifications, provenance, registry, search, users, and voting subsystems, configures cookie-based authentication dependency override, and exposes a health check endpoint.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "health",
+      "description": "Health check endpoint that returns a static success response indicating the API is operational.",
+      "inputs": [],
+      "output_type": "dict[str, str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dictionary with 'status' key set to 'ok'",
+        "HTTP 200 status code"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": 50,
+        "max_memory_mb": null,
+        "complexity": "O(1)"
+      }
+    }
+  ],
+  "dependencies": [
+    "fastapi",
+    "backend.api.auth.router",
+    "backend.api.feed.router",
+    "backend.api.forum.router",
+    "backend.api.notifications.router",
+    "backend.api.provenance.router",
+    "backend.api.registry.router",
+    "backend.api.search.router",
+    "backend.api.users.router",
+    "backend.api.voting.router",
+    "backend.api.auth.dependencies"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "FastAPI app instance initialized with title='centaur.tools API', version='1.0.0'",
+    "Dependency override maps placeholder_get_current_user to real_get_current_user for cookie-based auth",
+    "Nine routers included in fixed order: auth, feed, users, registry, search, voting, provenance, forum, notifications"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "Main module performs no direct data access; delegates to registered routers",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [
+      "api_health"
+    ],
+    "rationale": "Owns the health check endpoint and application initialization/configuration"
+  }
+}

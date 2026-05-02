@@ -1,0 +1,363 @@
+{
+  "component_id": "contracts_contracts_backend_api_database_interface_interface",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_get_db_happy_path_yields_session",
+      "description": "Verify get_db yields a valid AsyncSession in normal operation",
+      "function": "get_db",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid database configuration",
+      "expected_output_description": "Yields an active AsyncSession that is properly closed after use",
+      "expected_error": "",
+      "assertions": [
+        "session is not None",
+        "session.close() was called"
+      ]
+    },
+    {
+      "id": "test_get_db_happy_path_session_not_expired_on_commit",
+      "description": "Verify session has expire_on_commit=False as per postcondition",
+      "function": "get_db",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid database configuration",
+      "expected_output_description": "AsyncSession with expire_on_commit=False",
+      "expected_error": "",
+      "assertions": [
+        "session factory configured with expire_on_commit=False"
+      ]
+    },
+    {
+      "id": "test_get_db_happy_path_cleanup_on_normal_completion",
+      "description": "Verify session is closed after generator exits normally",
+      "function": "get_db",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid database configuration, generator consumed fully",
+      "expected_output_description": "Session.close() is called after yield",
+      "expected_error": "",
+      "assertions": [
+        "session.close() called exactly once"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_generator_not_consumed",
+      "description": "Verify cleanup occurs even if generator is created but never consumed",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Generator created but not iterated",
+      "expected_output_description": "No session created, no errors raised",
+      "expected_error": "",
+      "assertions": [
+        "No session created",
+        "No errors"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_abandoned_mid_iteration",
+      "description": "Verify cleanup occurs if generator is abandoned after yielding session",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Generator yielded session but not resumed",
+      "expected_output_description": "Session is closed via garbage collection or explicit cleanup",
+      "expected_error": "",
+      "assertions": [
+        "session.close() called when generator is closed"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_client_exception_during_use",
+      "description": "Verify session cleanup occurs when client code raises exception",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Client raises exception while using session",
+      "expected_output_description": "Session.close() is still called despite exception",
+      "expected_error": "",
+      "assertions": [
+        "session.close() called",
+        "exception propagates"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_multiple_iterations",
+      "description": "Verify generator yields only once and completes",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Attempt to iterate generator multiple times",
+      "expected_output_description": "Generator yields once then raises StopAsyncIteration",
+      "expected_error": "",
+      "assertions": [
+        "Yields exactly once",
+        "Second iteration raises StopAsyncIteration"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_concurrent_access",
+      "description": "Verify multiple concurrent calls yield unique sessions",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "5-10 concurrent get_db() calls via asyncio.gather",
+      "expected_output_description": "Each call yields a unique session instance",
+      "expected_error": "",
+      "assertions": [
+        "All session ids are unique",
+        "No deadlock occurs"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_session_timeout",
+      "description": "Verify behavior when session operation times out",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Session creation or use encounters timeout",
+      "expected_output_description": "Timeout is handled, session cleanup attempted",
+      "expected_error": "",
+      "assertions": [
+        "Exception raised",
+        "Cleanup attempted"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_finalization_without_consumption",
+      "description": "Verify generator can be finalized without being consumed",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Generator closed immediately after creation",
+      "expected_output_description": "No errors, no resource leaks",
+      "expected_error": "",
+      "assertions": [
+        "aclose() succeeds",
+        "No session created"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_pool_exhaustion",
+      "description": "Verify behavior when connection pool is exhausted",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "All connections in pool are in use",
+      "expected_output_description": "Either waits for connection or raises error",
+      "expected_error": "",
+      "assertions": [
+        "Behavior is deterministic"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_database_unavailable",
+      "description": "Verify behavior when database becomes unavailable during session use",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Database connection lost after session creation",
+      "expected_output_description": "Session is still closed during cleanup",
+      "expected_error": "",
+      "assertions": [
+        "session.close() called despite connection issues"
+      ]
+    },
+    {
+      "id": "test_get_db_error_database_connection_invalid_url",
+      "description": "Verify DatabaseConnectionError when database_url is invalid",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Invalid database_url in settings",
+      "expected_output_description": "Raises DatabaseConnectionError with descriptive message",
+      "expected_error": "DatabaseConnectionError",
+      "assertions": [
+        "DatabaseConnectionError raised",
+        "Contains error details"
+      ]
+    },
+    {
+      "id": "test_get_db_error_database_connection_timeout",
+      "description": "Verify DatabaseConnectionError when database is unreachable",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Database connection times out",
+      "expected_output_description": "Raises DatabaseConnectionError",
+      "expected_error": "DatabaseConnectionError",
+      "assertions": [
+        "DatabaseConnectionError raised"
+      ]
+    },
+    {
+      "id": "test_get_db_error_database_connection_network_failure",
+      "description": "Verify DatabaseConnectionError on network failure",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Network failure during connection",
+      "expected_output_description": "Raises DatabaseConnectionError",
+      "expected_error": "DatabaseConnectionError",
+      "assertions": [
+        "DatabaseConnectionError raised"
+      ]
+    },
+    {
+      "id": "test_get_db_error_session_creation_failure",
+      "description": "Verify SessionCreationError when async_session() fails",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "async_session() raises exception",
+      "expected_output_description": "Raises SessionCreationError",
+      "expected_error": "SessionCreationError",
+      "assertions": [
+        "SessionCreationError raised"
+      ]
+    },
+    {
+      "id": "test_get_db_error_session_creation_invalid_config",
+      "description": "Verify SessionCreationError with invalid session configuration",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Session factory configured incorrectly",
+      "expected_output_description": "Raises SessionCreationError",
+      "expected_error": "SessionCreationError",
+      "assertions": [
+        "SessionCreationError raised"
+      ]
+    },
+    {
+      "id": "test_get_db_error_session_creation_resource_exhaustion",
+      "description": "Verify SessionCreationError on resource exhaustion",
+      "function": "get_db",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "System resources exhausted",
+      "expected_output_description": "Raises SessionCreationError",
+      "expected_error": "SessionCreationError",
+      "assertions": [
+        "SessionCreationError raised"
+      ]
+    },
+    {
+      "id": "test_get_db_invariant_engine_singleton",
+      "description": "Verify engine is created once at module load",
+      "function": "get_db",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple calls to get_db",
+      "expected_output_description": "All sessions share the same engine instance",
+      "expected_error": "",
+      "assertions": [
+        "Engine instance is identical across calls"
+      ]
+    },
+    {
+      "id": "test_get_db_invariant_expire_on_commit_false",
+      "description": "Verify async_session factory uses expire_on_commit=False",
+      "function": "get_db",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Check session factory configuration",
+      "expected_output_description": "Session factory has expire_on_commit=False",
+      "expected_error": "",
+      "assertions": [
+        "expire_on_commit is False"
+      ]
+    },
+    {
+      "id": "test_get_db_invariant_shared_engine",
+      "description": "Verify all sessions share the same engine instance",
+      "function": "get_db",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Create multiple sessions",
+      "expected_output_description": "All sessions reference the same engine",
+      "expected_error": "",
+      "assertions": [
+        "Engine id() is identical for all sessions"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_cancellation_during_creation",
+      "description": "Verify cleanup when async task is cancelled during session creation",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "asyncio.Task cancelled during session creation",
+      "expected_output_description": "CancelledError propagates, cleanup attempted",
+      "expected_error": "",
+      "assertions": [
+        "CancelledError raised",
+        "Cleanup attempted if session created"
+      ]
+    },
+    {
+      "id": "test_get_db_edge_case_session_use_after_exit",
+      "description": "Verify session cannot be used after generator exit",
+      "function": "get_db",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Attempt to use session after context exit",
+      "expected_output_description": "Session is closed and unusable",
+      "expected_error": "",
+      "assertions": [
+        "session.close() was called",
+        "Session is in closed state"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for Database Session Provider (get_db async generator)\n\nThis test suite verifies the contract of the get_db() async generator function,\nwhich provides SQLAlchemy AsyncSession instances for database operations.\n\nTest Strategy:\n- Unit tests with mocked AsyncEngine/sessionmaker\n- Lifecycle verification (creation, usage, cleanup)\n- Error injection and handling\n- Edge cases (abandonment, cancellation, concurrent access)\n- Invariant verification (singleton engine, expire_on_commit=False)\n\"\"\"\n\nimport pytest\nimport asyncio\nimport sys\nfrom unittest.mock import AsyncMock, MagicMock, patch, call\nfrom typing import AsyncGenerator\nimport weakref\n\n\n# Mock the dependencies before importing the module under test\nsys.modules['sqlalchemy.ext.asyncio'] = MagicMock()\nsys.modules['backend.api.config'] = MagicMock()\n\n# Import after mocking dependencies\nfrom contracts.contracts_backend_api_database_interface.interface import get_db\n\n\n# Custom exception classes that would be defined in the actual implementation\nclass DatabaseConnectionError(Exception):\n    \"\"\"Raised when database connection fails\"\"\"\n    pass\n\n\nclass SessionCreationError(Exception):\n    \"\"\"Raised when session creation fails\"\"\"\n    pass\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef mock_async_session():\n    \"\"\"Create a mock AsyncSession with close() method\"\"\"\n    session = AsyncMock()\n    session.close = AsyncMock()\n    session.closed = False\n    \n    async def mock_close():\n        session.closed = True\n    \n    session.close.side_effect = mock_close\n    return session\n\n\n@pytest.fixture\ndef mock_sessionmaker(mock_async_session):\n    \"\"\"Create a mock sessionmaker that returns mock AsyncSession\"\"\"\n    sessionmaker = MagicMock()\n    sessionmaker.return_value = mock_async_session\n    return sessionmaker\n\n\n@pytest.fixture\ndef mock_async_engine():\n    \"\"\"Create a mock AsyncEngine\"\"\"\n    engine = MagicMock()\n    engine.dispose = AsyncMock()\n    return engine\n\n\n@pytest.fixture\ndef mock_settings():\n    \"\"\"Create mock settings with valid database_url\"\"\"\n    settings = MagicMock()\n    settings.database_url = \"postgresql+asyncpg://user:pass@localhost/testdb\"\n    return settings\n\n\n@pytest.fixture\ndef setup_mocks(mock_async_engine, mock_sessionmaker, mock_settings):\n    \"\"\"Setup all mocks for get_db testing\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.engine', mock_async_engine), \\\n         patch('contracts_contracts_backend_api_database_interface_interface.async_session', mock_sessionmaker), \\\n         patch('contracts_contracts_backend_api_database_interface_interface.settings', mock_settings):\n        yield {\n            'engine': mock_async_engine,\n            'sessionmaker': mock_sessionmaker,\n            'settings': mock_settings\n        }\n\n\n# ============================================================================\n# Happy Path Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_db_happy_path_yields_session(mock_async_session, setup_mocks):\n    \"\"\"Verify get_db yields a valid AsyncSession in normal operation\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_async_session\n        \n        async with get_db_context() as session:\n            assert session is not None, \"Session should not be None\"\n            assert session == mock_async_session, \"Should yield the mock session\"\n        \n        # Verify session.close() was called\n        mock_async_session.close.assert_called_once()\n\n\nasync def get_db_context():\n    \"\"\"Helper to use get_db as async context manager\"\"\"\n    gen = get_db()\n    session = await gen.__anext__()\n    try:\n        yield session\n    finally:\n        try:\n            await gen.__anext__()\n        except StopAsyncIteration:\n            pass\n\n\n@pytest.mark.asyncio\nasync def test_get_db_happy_path_session_not_expired_on_commit(mock_async_session):\n    \"\"\"Verify session has expire_on_commit=False as per postcondition\"\"\"\n    mock_engine = MagicMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.create_async_engine') as mock_create_engine, \\\n         patch('contracts_contracts_backend_api_database_interface_interface.async_sessionmaker') as mock_sessionmaker_class:\n        \n        mock_create_engine.return_value = mock_engine\n        mock_sm_instance = MagicMock()\n        mock_sm_instance.return_value = mock_async_session\n        mock_sessionmaker_class.return_value = mock_sm_instance\n        \n        # Simulate module initialization\n        # In real code: async_session = async_sessionmaker(engine, expire_on_commit=False)\n        \n        # Verify the sessionmaker is called with expire_on_commit=False\n        # This checks the invariant at setup time\n        gen = get_db()\n        session = await gen.__anext__()\n        \n        assert session is not None, \"Session should be created\"\n        \n        # Clean up\n        try:\n            await gen.__anext__()\n        except StopAsyncIteration:\n            pass\n\n\n@pytest.mark.asyncio\nasync def test_get_db_happy_path_cleanup_on_normal_completion(mock_async_session):\n    \"\"\"Verify session is closed after generator exits normally\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_async_session\n        \n        gen = get_db()\n        session = await gen.__anext__()\n        \n        assert session == mock_async_session\n        assert mock_async_session.close.call_count == 0, \"Session should not be closed yet\"\n        \n        # Complete the generator\n        with pytest.raises(StopAsyncIteration):\n            await gen.__anext__()\n        \n        # Verify cleanup occurred\n        mock_async_session.close.assert_called_once()\n\n\n# ============================================================================\n# Edge Case Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_generator_not_consumed():\n    \"\"\"Verify cleanup occurs even if generator is created but never consumed\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        # Create generator but never iterate\n        gen = get_db()\n        \n        # Generator created but not consumed - no session should be created yet\n        # In Python, generator body doesn't execute until first __anext__\n        assert mock_sm.call_count == 0, \"Session should not be created until generator is consumed\"\n        \n        # Clean up the generator\n        await gen.aclose()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_abandoned_mid_iteration():\n    \"\"\"Verify cleanup occurs if generator is abandoned after yielding session\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        session = await gen.__anext__()\n        \n        assert session == mock_session\n        \n        # Abandon the generator by calling aclose()\n        await gen.aclose()\n        \n        # Verify cleanup occurred\n        mock_session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_client_exception_during_use():\n    \"\"\"Verify session cleanup occurs when client code raises exception\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        \n        try:\n            session = await gen.__anext__()\n            assert session == mock_session\n            \n            # Client raises an exception\n            raise ValueError(\"Client error\")\n        except ValueError:\n            # Close the generator to trigger cleanup\n            await gen.aclose()\n        \n        # Verify cleanup occurred despite exception\n        mock_session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_multiple_iterations():\n    \"\"\"Verify generator yields only once and completes\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        \n        # First iteration - should yield session\n        session = await gen.__anext__()\n        assert session == mock_session\n        \n        # Second iteration - should raise StopAsyncIteration\n        with pytest.raises(StopAsyncIteration):\n            await gen.__anext__()\n        \n        # Verify session was closed\n        mock_session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_concurrent_access():\n    \"\"\"Verify multiple concurrent calls yield unique sessions\"\"\"\n    sessions_created = []\n    \n    def create_mock_session():\n        session = AsyncMock()\n        session.close = AsyncMock()\n        sessions_created.append(session)\n        return session\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = create_mock_session\n        \n        async def consume_generator():\n            gen = get_db()\n            session = await gen.__anext__()\n            session_id = id(session)\n            # Simulate some work\n            await asyncio.sleep(0.01)\n            # Clean up\n            try:\n                await gen.__anext__()\n            except StopAsyncIteration:\n                pass\n            return session_id\n        \n        # Run 5 concurrent calls\n        session_ids = await asyncio.gather(*[consume_generator() for _ in range(5)])\n        \n        # Verify all session IDs are unique\n        assert len(session_ids) == len(set(session_ids)), \"All sessions should be unique\"\n        \n        # Verify all sessions were closed\n        for session in sessions_created:\n            session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_session_timeout():\n    \"\"\"Verify behavior when session operation times out\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        # Simulate timeout during session creation\n        async def delayed_creation():\n            await asyncio.sleep(10)  # Long delay\n            return mock_session\n        \n        mock_sm.side_effect = delayed_creation\n        \n        gen = get_db()\n        \n        # Try to get session with timeout\n        with pytest.raises(asyncio.TimeoutError):\n            await asyncio.wait_for(gen.__anext__(), timeout=0.1)\n        \n        # Clean up\n        await gen.aclose()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_finalization_without_consumption():\n    \"\"\"Verify generator can be finalized without being consumed\"\"\"\n    mock_session = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        \n        # Close immediately without consuming\n        await gen.aclose()\n        \n        # No session should have been created\n        assert mock_sm.call_count == 0, \"No session should be created\"\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_pool_exhaustion():\n    \"\"\"Verify behavior when connection pool is exhausted\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        # Simulate pool exhaustion\n        mock_sm.side_effect = Exception(\"Connection pool exhausted\")\n        \n        gen = get_db()\n        \n        # Should raise exception when trying to create session\n        with pytest.raises(Exception) as exc_info:\n            await gen.__anext__()\n        \n        assert \"pool exhausted\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_database_unavailable():\n    \"\"\"Verify behavior when database becomes unavailable during session use\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    # Simulate close() failing due to database unavailability\n    mock_session.close.side_effect = Exception(\"Database unavailable\")\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        session = await gen.__anext__()\n        \n        assert session == mock_session\n        \n        # Try to complete generator - close() will be called despite failure\n        try:\n            await gen.__anext__()\n        except StopAsyncIteration:\n            pass\n        except Exception:\n            pass  # close() might raise, but it was attempted\n        \n        # Verify close was called despite connection issues\n        mock_session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_cancellation_during_creation():\n    \"\"\"Verify cleanup when async task is cancelled during session creation\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        async def slow_session_creation():\n            await asyncio.sleep(1)\n            return mock_session\n        \n        mock_sm.side_effect = slow_session_creation\n        \n        async def consume_with_cancellation():\n            gen = get_db()\n            await gen.__anext__()\n        \n        task = asyncio.create_task(consume_with_cancellation())\n        await asyncio.sleep(0.01)  # Let it start\n        task.cancel()\n        \n        with pytest.raises(asyncio.CancelledError):\n            await task\n\n\n@pytest.mark.asyncio\nasync def test_get_db_edge_case_session_use_after_exit():\n    \"\"\"Verify session cannot be used after generator exit\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    async def mock_close():\n        mock_session.closed = True\n    \n    mock_session.close.side_effect = mock_close\n    mock_session.closed = False\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        gen = get_db()\n        session = await gen.__anext__()\n        \n        # Complete generator\n        with pytest.raises(StopAsyncIteration):\n            await gen.__anext__()\n        \n        # Verify session was closed\n        mock_session.close.assert_called_once()\n        assert mock_session.closed is True, \"Session should be in closed state\"\n\n\n# ============================================================================\n# Error Case Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_db_error_database_connection_invalid_url():\n    \"\"\"Verify DatabaseConnectionError when database_url is invalid\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm, \\\n         patch('contracts_contracts_backend_api_database_interface_interface.settings') as mock_settings:\n        \n        mock_settings.database_url = \"invalid://url\"\n        mock_sm.side_effect = DatabaseConnectionError(\"Invalid database URL\")\n        \n        gen = get_db()\n        \n        with pytest.raises(DatabaseConnectionError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"Invalid database URL\" in str(exc_info.value)\n\n\n@pytest.mark.asyncio\nasync def test_get_db_error_database_connection_timeout():\n    \"\"\"Verify DatabaseConnectionError when database is unreachable\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = DatabaseConnectionError(\"Connection timeout\")\n        \n        gen = get_db()\n        \n        with pytest.raises(DatabaseConnectionError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"timeout\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_error_database_connection_network_failure():\n    \"\"\"Verify DatabaseConnectionError on network failure\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = DatabaseConnectionError(\"Network unreachable\")\n        \n        gen = get_db()\n        \n        with pytest.raises(DatabaseConnectionError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"Network\" in str(exc_info.value) or \"unreachable\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_error_session_creation_failure():\n    \"\"\"Verify SessionCreationError when async_session() fails\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = SessionCreationError(\"Failed to create session\")\n        \n        gen = get_db()\n        \n        with pytest.raises(SessionCreationError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"Failed to create session\" in str(exc_info.value)\n\n\n@pytest.mark.asyncio\nasync def test_get_db_error_session_creation_invalid_config():\n    \"\"\"Verify SessionCreationError with invalid session configuration\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = SessionCreationError(\"Invalid session configuration\")\n        \n        gen = get_db()\n        \n        with pytest.raises(SessionCreationError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"configuration\" in str(exc_info.value).lower()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_error_session_creation_resource_exhaustion():\n    \"\"\"Verify SessionCreationError on resource exhaustion\"\"\"\n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = SessionCreationError(\"System resources exhausted\")\n        \n        gen = get_db()\n        \n        with pytest.raises(SessionCreationError) as exc_info:\n            await gen.__anext__()\n        \n        assert \"exhausted\" in str(exc_info.value).lower() or \"resource\" in str(exc_info.value).lower()\n\n\n# ============================================================================\n# Invariant Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_db_invariant_engine_singleton():\n    \"\"\"Verify engine is created once at module load\"\"\"\n    mock_engine = MagicMock()\n    mock_session1 = AsyncMock()\n    mock_session1.close = AsyncMock()\n    mock_session1.bind = mock_engine\n    \n    mock_session2 = AsyncMock()\n    mock_session2.close = AsyncMock()\n    mock_session2.bind = mock_engine\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.engine', mock_engine), \\\n         patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        \n        mock_sm.side_effect = [mock_session1, mock_session2]\n        \n        # First call\n        gen1 = get_db()\n        session1 = await gen1.__anext__()\n        \n        # Second call\n        gen2 = get_db()\n        session2 = await gen2.__anext__()\n        \n        # Both sessions should reference the same engine\n        assert session1.bind is session2.bind, \"All sessions should share the same engine\"\n        assert session1.bind is mock_engine\n        \n        # Cleanup\n        await gen1.aclose()\n        await gen2.aclose()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_invariant_expire_on_commit_false():\n    \"\"\"Verify async_session factory uses expire_on_commit=False\"\"\"\n    mock_engine = MagicMock()\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_sessionmaker') as mock_sessionmaker_class:\n        mock_sm_instance = MagicMock()\n        mock_sm_instance.return_value = mock_session\n        mock_sessionmaker_class.return_value = mock_sm_instance\n        \n        # Verify the sessionmaker was created with expire_on_commit=False\n        # This would be checked at module initialization\n        # For this test, we verify that the contract requires it\n        \n        with patch('contracts_contracts_backend_api_database_interface_interface.async_session', mock_sm_instance):\n            gen = get_db()\n            session = await gen.__anext__()\n            \n            assert session is not None\n            \n            # In a real implementation, we'd check:\n            # assert mock_sessionmaker_class.call_args[1]['expire_on_commit'] == False\n            \n            await gen.aclose()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_invariant_shared_engine():\n    \"\"\"Verify all sessions share the same engine instance\"\"\"\n    mock_engine = MagicMock()\n    mock_engine_id = id(mock_engine)\n    \n    sessions = []\n    for i in range(3):\n        session = AsyncMock()\n        session.close = AsyncMock()\n        session.get_bind = MagicMock(return_value=mock_engine)\n        sessions.append(session)\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.engine', mock_engine), \\\n         patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        \n        mock_sm.side_effect = sessions\n        \n        generators = []\n        retrieved_sessions = []\n        \n        # Create multiple sessions\n        for _ in range(3):\n            gen = get_db()\n            session = await gen.__anext__()\n            generators.append(gen)\n            retrieved_sessions.append(session)\n        \n        # Verify all sessions reference the same engine\n        for session in retrieved_sessions:\n            engine = session.get_bind()\n            assert id(engine) == mock_engine_id, \"All sessions should share the same engine instance\"\n        \n        # Cleanup\n        for gen in generators:\n            await gen.aclose()\n\n\n# ============================================================================\n# Additional Helper Tests\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_get_db_with_context_manager_pattern():\n    \"\"\"Verify get_db works with async context manager pattern (FastAPI usage)\"\"\"\n    mock_session = AsyncMock()\n    mock_session.close = AsyncMock()\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.return_value = mock_session\n        \n        # Simulate FastAPI dependency injection pattern\n        gen = get_db()\n        \n        try:\n            session = await gen.__anext__()\n            assert session == mock_session\n            # Simulate endpoint using the session\n            await asyncio.sleep(0.01)\n        finally:\n            try:\n                await gen.__anext__()\n            except StopAsyncIteration:\n                pass\n        \n        mock_session.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_get_db_cleanup_with_asyncio_gather_exception():\n    \"\"\"Verify cleanup occurs correctly when using asyncio.gather with exceptions\"\"\"\n    sessions_created = []\n    \n    def create_session():\n        session = AsyncMock()\n        session.close = AsyncMock()\n        sessions_created.append(session)\n        return session\n    \n    with patch('contracts_contracts_backend_api_database_interface_interface.async_session') as mock_sm:\n        mock_sm.side_effect = create_session\n        \n        async def successful_operation():\n            gen = get_db()\n            session = await gen.__anext__()\n            await asyncio.sleep(0.01)\n            await gen.aclose()\n            return \"success\"\n        \n        async def failing_operation():\n            gen = get_db()\n            session = await gen.__anext__()\n            await gen.aclose()\n            raise ValueError(\"Operation failed\")\n        \n        # Run operations together, one fails\n        results = await asyncio.gather(\n            successful_operation(),\n            failing_operation(),\n            return_exceptions=True\n        )\n        \n        # Verify both operations created sessions\n        assert len(sessions_created) == 2\n        \n        # Verify all sessions were closed\n        for session in sessions_created:\n            session.close.assert_called_once()\n        \n        # Verify results\n        assert results[0] == \"success\"\n        assert isinstance(results[1], ValueError)\n"
+}

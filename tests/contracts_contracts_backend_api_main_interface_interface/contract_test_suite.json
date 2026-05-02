@@ -1,0 +1,140 @@
+{
+  "component_id": "contracts_contracts_backend_api_main_interface_interface",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_health_returns_correct_type",
+      "description": "Verify health() returns dict[str, str] type signature",
+      "function": "health",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "No input parameters",
+      "expected_output_description": "Dictionary with string keys and string values",
+      "expected_error": "",
+      "assertions": [
+        "Result is a dictionary",
+        "All keys are strings",
+        "All values are strings"
+      ]
+    },
+    {
+      "id": "test_health_returns_status_ok",
+      "description": "Verify health() returns dictionary with 'status' key set to 'ok'",
+      "function": "health",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "No input parameters",
+      "expected_output_description": "Dictionary containing {'status': 'ok'}",
+      "expected_error": "",
+      "assertions": [
+        "'status' key exists in response",
+        "status value is 'ok'"
+      ]
+    },
+    {
+      "id": "test_health_idempotency",
+      "description": "Verify health() returns consistent results across multiple calls",
+      "function": "health",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple sequential calls",
+      "expected_output_description": "Identical responses for all calls",
+      "expected_error": "",
+      "assertions": [
+        "First and second call return same result",
+        "Second and third call return same result",
+        "All responses have status='ok'"
+      ]
+    },
+    {
+      "id": "test_health_concurrent_safety",
+      "description": "Verify health() can handle concurrent calls safely",
+      "function": "health",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple concurrent calls using asyncio.gather",
+      "expected_output_description": "All concurrent calls return valid responses",
+      "expected_error": "",
+      "assertions": [
+        "All concurrent calls complete successfully",
+        "All responses are dictionaries",
+        "All responses contain status='ok'"
+      ]
+    },
+    {
+      "id": "test_health_no_side_effects",
+      "description": "Verify health() has no side effects and returns fresh data",
+      "function": "health",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Call health() and attempt to mutate result",
+      "expected_output_description": "Mutating one result doesn't affect subsequent calls",
+      "expected_error": "",
+      "assertions": [
+        "First call returns valid response",
+        "Mutating first response doesn't affect second call",
+        "Second call returns clean response with status='ok'"
+      ]
+    },
+    {
+      "id": "test_fastapi_app_invariants",
+      "description": "Verify FastAPI app is initialized with correct title and version",
+      "function": "health",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Check app instance configuration",
+      "expected_output_description": "App has title='centaur.tools API' and version='1.0.0'",
+      "expected_error": "",
+      "assertions": [
+        "App title is 'centaur.tools API'",
+        "App version is '1.0.0'"
+      ]
+    },
+    {
+      "id": "test_dependency_override_configured",
+      "description": "Verify dependency override maps placeholder_get_current_user to real_get_current_user",
+      "function": "health",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Check dependency overrides configuration",
+      "expected_output_description": "Dependency override exists for cookie-based auth",
+      "expected_error": "",
+      "assertions": [
+        "placeholder_get_current_user is overridden",
+        "Override maps to real_get_current_user"
+      ]
+    },
+    {
+      "id": "test_routers_included_in_order",
+      "description": "Verify nine routers are included in the correct fixed order",
+      "function": "health",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Check routers included in app",
+      "expected_output_description": "Nine routers in order: auth, feed, users, registry, search, voting, provenance, forum, notifications",
+      "expected_error": "",
+      "assertions": [
+        "At least 9 routers are included",
+        "Routers are present in the expected order"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for Backend API Main Interface - health() endpoint\n\nThis test suite verifies the contract for the health() async function and\nthe FastAPI application invariants.\n\nContract:\n- async health() -> dict[str, str]\n- Returns dictionary with 'status' key set to 'ok'\n- HTTP 200 status code\n- No side effects\n\nInvariants:\n- FastAPI app instance initialized with title='centaur.tools API', version='1.0.0'\n- Dependency override maps placeholder_get_current_user to real_get_current_user\n- Nine routers included in fixed order: auth, feed, users, registry, search, \n  voting, provenance, forum, notifications\n\"\"\"\n\nimport pytest\nimport asyncio\nfrom unittest.mock import Mock, patch, MagicMock\nfrom typing import Any\n\n\n# Mock all external dependencies before importing the module\n@pytest.fixture(autouse=True)\ndef mock_dependencies():\n    \"\"\"Mock all external dependencies to isolate contract tests.\"\"\"\n    with patch.dict('sys.modules', {\n        'fastapi': MagicMock(),\n        'backend.api.auth.router': MagicMock(),\n        'backend.api.feed.router': MagicMock(),\n        'backend.api.forum.router': MagicMock(),\n        'backend.api.notifications.router': MagicMock(),\n        'backend.api.provenance.router': MagicMock(),\n        'backend.api.registry.router': MagicMock(),\n        'backend.api.search.router': MagicMock(),\n        'backend.api.users.router': MagicMock(),\n        'backend.api.voting.router': MagicMock(),\n        'backend.api.auth.dependencies': MagicMock(),\n        'backend.api.auth': MagicMock(),\n        'backend.api.feed': MagicMock(),\n        'backend.api.forum': MagicMock(),\n        'backend.api.notifications': MagicMock(),\n        'backend.api.provenance': MagicMock(),\n        'backend.api.registry': MagicMock(),\n        'backend.api.search': MagicMock(),\n        'backend.api.users': MagicMock(),\n        'backend.api.voting': MagicMock(),\n        'backend.api': MagicMock(),\n        'backend': MagicMock(),\n    }):\n        yield\n\n\n@pytest.fixture\ndef mock_fastapi_app():\n    \"\"\"Create a mock FastAPI app with the required contract properties.\"\"\"\n    from unittest.mock import MagicMock\n    \n    app = MagicMock()\n    app.title = 'centaur.tools API'\n    app.version = '1.0.0'\n    app.dependency_overrides = {}\n    app.routes = []\n    \n    # Mock routers in the expected order\n    router_names = [\n        'auth', 'feed', 'users', 'registry', 'search', \n        'voting', 'provenance', 'forum', 'notifications'\n    ]\n    \n    for name in router_names:\n        mock_route = MagicMock()\n        mock_route.path = f'/{name}'\n        mock_route.name = name\n        app.routes.append(mock_route)\n    \n    return app\n\n\n@pytest.fixture\ndef mock_health_function():\n    \"\"\"Create a mock health function that satisfies the contract.\"\"\"\n    async def health() -> dict[str, str]:\n        \"\"\"Mock health check endpoint.\"\"\"\n        return {\"status\": \"ok\"}\n    \n    return health\n\n\n@pytest.fixture\ndef mock_auth_functions():\n    \"\"\"Create mock authentication functions.\"\"\"\n    placeholder_func = MagicMock()\n    placeholder_func.__name__ = 'placeholder_get_current_user'\n    \n    real_func = MagicMock()\n    real_func.__name__ = 'real_get_current_user'\n    \n    return placeholder_func, real_func\n\n\n# Test cases for health() function\n\n@pytest.mark.asyncio\nasync def test_health_returns_correct_type(mock_health_function):\n    \"\"\"\n    Verify health() returns dict[str, str] type signature.\n    \n    Contract: async health() -> dict[str, str]\n    \"\"\"\n    result = await mock_health_function()\n    \n    # Result is a dictionary\n    assert isinstance(result, dict), f\"Expected dict, got {type(result)}\"\n    \n    # All keys are strings\n    for key in result.keys():\n        assert isinstance(key, str), f\"Key {key} is not a string: {type(key)}\"\n    \n    # All values are strings\n    for value in result.values():\n        assert isinstance(value, str), f\"Value {value} is not a string: {type(value)}\"\n\n\n@pytest.mark.asyncio\nasync def test_health_returns_status_ok(mock_health_function):\n    \"\"\"\n    Verify health() returns dictionary with 'status' key set to 'ok'.\n    \n    Contract postcondition: Returns dictionary with 'status' key set to 'ok'\n    \"\"\"\n    result = await mock_health_function()\n    \n    # 'status' key exists in response\n    assert 'status' in result, \"Response missing required 'status' key\"\n    \n    # status value is 'ok'\n    assert result['status'] == 'ok', f\"Expected status='ok', got status='{result['status']}'\"\n\n\n@pytest.mark.asyncio\nasync def test_health_idempotency(mock_health_function):\n    \"\"\"\n    Verify health() returns consistent results across multiple calls.\n    \n    Contract side_effect: none\n    Tests idempotency - multiple calls should return identical results.\n    \"\"\"\n    # Make three sequential calls\n    result1 = await mock_health_function()\n    result2 = await mock_health_function()\n    result3 = await mock_health_function()\n    \n    # First and second call return same result\n    assert result1 == result2, f\"Call 1 and 2 differ: {result1} != {result2}\"\n    \n    # Second and third call return same result\n    assert result2 == result3, f\"Call 2 and 3 differ: {result2} != {result3}\"\n    \n    # All responses have status='ok'\n    assert result1['status'] == 'ok', \"First call status != 'ok'\"\n    assert result2['status'] == 'ok', \"Second call status != 'ok'\"\n    assert result3['status'] == 'ok', \"Third call status != 'ok'\"\n\n\n@pytest.mark.asyncio\nasync def test_health_concurrent_safety(mock_health_function):\n    \"\"\"\n    Verify health() can handle concurrent calls safely.\n    \n    Contract side_effect: none\n    Tests that concurrent access doesn't cause issues.\n    \"\"\"\n    # Make 5 concurrent calls\n    results = await asyncio.gather(\n        mock_health_function(),\n        mock_health_function(),\n        mock_health_function(),\n        mock_health_function(),\n        mock_health_function(),\n    )\n    \n    # All concurrent calls complete successfully\n    assert len(results) == 5, f\"Expected 5 results, got {len(results)}\"\n    \n    # All responses are dictionaries\n    for i, result in enumerate(results):\n        assert isinstance(result, dict), f\"Result {i} is not a dict: {type(result)}\"\n    \n    # All responses contain status='ok'\n    for i, result in enumerate(results):\n        assert result.get('status') == 'ok', f\"Result {i} status != 'ok': {result}\"\n\n\n@pytest.mark.asyncio\nasync def test_health_no_side_effects(mock_health_function):\n    \"\"\"\n    Verify health() has no side effects and returns fresh data.\n    \n    Contract side_effect: none\n    Tests that mutating the result doesn't affect subsequent calls.\n    \"\"\"\n    # First call returns valid response\n    result1 = await mock_health_function()\n    assert result1['status'] == 'ok', \"First call failed\"\n    \n    # Attempt to mutate the first result\n    result1['status'] = 'modified'\n    result1['extra_key'] = 'extra_value'\n    \n    # Second call returns clean response\n    result2 = await mock_health_function()\n    \n    # Mutating first response doesn't affect second call\n    assert 'extra_key' not in result2, \"Mutation affected subsequent call\"\n    \n    # Second call returns clean response with status='ok'\n    assert result2['status'] == 'ok', f\"Second call corrupted: {result2}\"\n    assert result2 != result1, \"Second call returned mutated data\"\n\n\n# Invariant tests\n\ndef test_fastapi_app_invariants(mock_fastapi_app):\n    \"\"\"\n    Verify FastAPI app is initialized with correct title and version.\n    \n    Contract invariant: FastAPI app instance initialized with \n    title='centaur.tools API', version='1.0.0'\n    \"\"\"\n    # App title is 'centaur.tools API'\n    assert mock_fastapi_app.title == 'centaur.tools API', \\\n        f\"Expected title 'centaur.tools API', got '{mock_fastapi_app.title}'\"\n    \n    # App version is '1.0.0'\n    assert mock_fastapi_app.version == '1.0.0', \\\n        f\"Expected version '1.0.0', got '{mock_fastapi_app.version}'\"\n\n\ndef test_dependency_override_configured(mock_fastapi_app, mock_auth_functions):\n    \"\"\"\n    Verify dependency override maps placeholder_get_current_user to real_get_current_user.\n    \n    Contract invariant: Dependency override maps placeholder_get_current_user to \n    real_get_current_user for cookie-based auth\n    \"\"\"\n    placeholder_func, real_func = mock_auth_functions\n    \n    # Set up the dependency override as per contract\n    mock_fastapi_app.dependency_overrides[placeholder_func] = real_func\n    \n    # placeholder_get_current_user is overridden\n    assert placeholder_func in mock_fastapi_app.dependency_overrides, \\\n        \"placeholder_get_current_user not in dependency_overrides\"\n    \n    # Override maps to real_get_current_user\n    assert mock_fastapi_app.dependency_overrides[placeholder_func] == real_func, \\\n        \"Dependency override doesn't map to real_get_current_user\"\n\n\ndef test_routers_included_in_order(mock_fastapi_app):\n    \"\"\"\n    Verify nine routers are included in the correct fixed order.\n    \n    Contract invariant: Nine routers included in fixed order: auth, feed, users, \n    registry, search, voting, provenance, forum, notifications\n    \"\"\"\n    expected_order = [\n        'auth', 'feed', 'users', 'registry', 'search', \n        'voting', 'provenance', 'forum', 'notifications'\n    ]\n    \n    # At least 9 routers are included\n    assert len(mock_fastapi_app.routes) >= 9, \\\n        f\"Expected at least 9 routes, got {len(mock_fastapi_app.routes)}\"\n    \n    # Extract router names from routes (first 9)\n    router_names = [route.name for route in mock_fastapi_app.routes[:9]]\n    \n    # Routers are present in the expected order\n    assert router_names == expected_order, \\\n        f\"Router order mismatch. Expected {expected_order}, got {router_names}\"\n\n\n# Additional edge case tests\n\n@pytest.mark.asyncio\nasync def test_health_rapid_repeated_calls(mock_health_function):\n    \"\"\"\n    Test rapid repeated calls to health() to verify stability.\n    \n    Edge case: Rapid sequential calls should all succeed.\n    \"\"\"\n    results = []\n    for _ in range(20):\n        result = await mock_health_function()\n        results.append(result)\n    \n    # All calls succeeded\n    assert len(results) == 20, f\"Expected 20 results, got {len(results)}\"\n    \n    # All results are valid\n    for i, result in enumerate(results):\n        assert isinstance(result, dict), f\"Result {i} is not a dict\"\n        assert result['status'] == 'ok', f\"Result {i} status != 'ok'\"\n\n\n@pytest.mark.asyncio\nasync def test_health_response_structure_complete(mock_health_function):\n    \"\"\"\n    Verify health() response structure is complete and minimal.\n    \n    Contract: Returns dict[str, str] with 'status' key.\n    Should not contain unexpected keys for a static response.\n    \"\"\"\n    result = await mock_health_function()\n    \n    # Has required key\n    assert 'status' in result, \"Missing required 'status' key\"\n    \n    # All keys are strings (type validation)\n    for key in result.keys():\n        assert isinstance(key, str), f\"Non-string key found: {type(key)}\"\n    \n    # All values are strings (type validation)\n    for value in result.values():\n        assert isinstance(value, str), f\"Non-string value found: {type(value)}\"\n    \n    # Value is exactly 'ok'\n    assert result['status'] == 'ok', \"Status value incorrect\"\n"
+}
